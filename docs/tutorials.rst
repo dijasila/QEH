@@ -1,12 +1,9 @@
 .. _qeh tutorial:
 .. module:: qeh
 
-=====================================================
-The Quantum Electrostatic Heterostructure (QEH) model
-=====================================================
-
-Brief overview
-==============
+========
+Tutorial
+========
 
 In this tuturial we show how to calculate the linear response of a general van
 der Waals Heterostructure (vdWH) by means of the quantum electrostatic

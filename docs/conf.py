@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Quantum Electrostatic Heterostructure Model'
+project = 'QEH Model'
 copyright = '2019, CAMD'
 author = 'CAMD'
 
