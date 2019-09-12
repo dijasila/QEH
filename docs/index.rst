@@ -21,8 +21,8 @@ heterostructure::
    :caption: Contents:
 
    install.rst
+   gettingstarted.rst
    tutorials.rst
-
 
 
 Indices and tables

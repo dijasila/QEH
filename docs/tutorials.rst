@@ -1,9 +1,8 @@
 .. _qeh tutorial:
 .. module:: qeh
 
-========
-Tutorial
-========
+Calculating new building blocks
+===============================
 
 In this tuturial we show how to calculate the linear response of a general van
 der Waals Heterostructure (vdWH) by means of the quantum electrostatic
@@ -24,7 +23,7 @@ A thourough description of the QEH model can be found in [#qeh_theory]_:
     *Nano Letters* **15** (7), 4616-4621 (2015)
 
 Command line interface for the QEH code and getting the default dielectric BBs
-==============================================================================
+------------------------------------------------------------------------------
 The QEH code includes a simple command line interface (CLI) that makes playing
 around with different heterostructures easy. In order to use the CLI easily it is
 recommended to bind an alias to the qeh module
@@ -44,7 +43,7 @@ To view the full documentation for the QEH CLI use::
 
 
 Constructing a dielectric building block
-========================================
+----------------------------------------
 
 First, we need a ground state calculation for each of the layers in the vdWH.
 We will consider a MoS2/WSe2 bilayer. In the following script
@@ -77,7 +76,7 @@ Finally the building blocks are ready to be combined electrostatically.
 
 
 Interlayer excitons in MoS2/WSe2
-================================
+--------------------------------
 
 As shown in [#interlayer]_ the MoS2_WSe2 can host excitonic excitations where
 the electron and the hole are spatially separated, with the electron sitting
@@ -110,7 +109,7 @@ We find an interlayer exciton binding energy of `\sim 0.3` eV!
 
 
 Default layer thicknesses
-=========================
+-------------------------
 Working with the QEH heterostructure class gives the user maximum freedom to
 choose all input parameters (distances between layers etc.), which on the other
 hand is tedious. To more easily set up heterostructures without having to specify
@@ -147,7 +146,7 @@ The QEH module then uses default values for layer thicknesses calculated from th
   plot_plasmons(output)
 
 Doped semiconductors
-====================
+--------------------
 With the QEH module it is possible to calculate the response of doped semi
 conductors. This is done by specifying a doping level and an effective mass::
 
@@ -162,7 +161,7 @@ conductors. This is done by specifying a doping level and an effective mass::
 The effect of doping is included as a free electron gas with the specified effective mass. If no effective mass is specified the QEH module falls back to default values for the effective mass. Currently the QEH module knows effective masses for all transition metal dichalcogenides calculated in the Computational 2D materials Database project (C2DB `<http://c2db.fysik.dtu.dk/>`_).
 
 Phononic contribution to the dielectric response
-================================================
+------------------------------------------------
 Polar crystals will have an additional contribution to their dielectric response
 originating from coupling of electric field to phonons (in addition to the
 electronic response). This effect can be included by adding ´´+phonons´´
