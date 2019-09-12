@@ -1,3 +1,8 @@
+test:
+  image: python:3.6
+  script:
+    - pip install .
+
 docs_test:
   image: python:3.6
   script:
