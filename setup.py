@@ -8,7 +8,7 @@ version = re.search("__version__ = '(.*)'", txt).group(1)
 long_description = Path('README.md').read_text()
 
 setup(
-    name='asr',
+    name='qeh',
     version=version,
     description='Quantum Electrostatic Heterostructure Model',
     long_description=long_description,
