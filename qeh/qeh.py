@@ -1724,7 +1724,7 @@ def main(args=None):
         qeh H-MoS2+doping=0.1,T=25e-3,eta=1e-3,em=0.43
 
     Set custom omega and q grid:
-       qeh 2graphene+doping=0.5 --q 1e-3 0.1 100 --omega 1e-3 2 1000
+        qeh 2graphene+doping=0.5 --q 1e-3 0.1 100 --omega 1e-3 2 1000
 
     """
     formatter = argparse.RawDescriptionHelpFormatter
