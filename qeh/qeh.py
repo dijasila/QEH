@@ -1696,6 +1696,18 @@ def make_heterostructure(layers,
     return het
 
 
+def download_bb(target):
+    import tarfile
+    import urllib.request
+    targz = str(target) + '.tar.gz'
+    url = ('https://cmr.fysik.dtu.dk/_downloads/'
+           'f4f73c7821b716419dc1bcf73136ef70/chi-data.tar.gz')
+    urllib.request.urlretrieve(url, targz)
+    tar = tarfile.open(targz, "r:gz")
+    tar.extractall(str(target.parent))
+    tar.close()
+
+
 def main(args=None):
     import argparse
     from pathlib import Path
@@ -1751,11 +1763,12 @@ def main(args=None):
     parser.add_argument('--thicknesses', nargs='*', help=help,
                         default=None, type=float)
 
+    defpath = Path(__file__).parent / 'chi-data'
     help = ("Path to folder containing dielectric building blocks. "
-            "Defaults to current folder, ./chi-data and ~/.chi-data "
+            f"Defaults to current folder, ./chi-data and {defpath} "
             "in that order")
     parser.add_argument('--buildingblockpath', nargs='*', help=help,
-                        default=['.', './chi-data', '~/chi-data'], type=str)
+                        default=['.', './chi-data', defpath], type=str)
 
     help = ("Calculate plasmon spectrum")
     parser.add_argument('--plasmons', action='store_true', help=help)
@@ -1813,23 +1826,12 @@ def main(args=None):
         save_plots = args.save_plots
 
     layers = expand_layers(layers)
-    # for il, layer in enumerate(layers):
-    #     layers[il] = layer + '-chi.npz'
 
-    # Make sure that the building block files can be found
-    link = ('https://cmr.fysik.dtu.dk/_downloads/'
-            'f4f73c7821b716419dc1bcf73136ef70/chi-data.tar.gz')
-    msg = """
-
-    Building block file ({bb}) cannot be found!
-    Please download and unpack the dielectric building blocks.
-    This can be done with:
-    wget {link}
-    tar -zxf chi-data.tar.gz
-    mv chi-data ~
-    which will put all building blocks in a folder in
-    your home directory
-    """
+    if not defpath.is_dir():
+        print('First run of QEH package, downloading dielectric bb\'s - '
+              'this could take a couple of minutes.')
+        download_bb(defpath)
+        print('Done.')
 
     # Locate files for layers
     print('Looking for building blocks')
@@ -1846,8 +1848,8 @@ def main(args=None):
             if bb.is_file():
                 break
         else:
-            raise FileNotFoundError(msg.format(bb=layerpath,
-                                               link=link))
+            msg = 'Building block files ({bb}) cannot be found!'
+            raise FileNotFoundError(msg)
 
         layer_paths.append(str(bb))
 
@@ -1887,8 +1889,7 @@ def main(args=None):
                               frequencies=args.omega,
                               substrate=substrate)
 
-    if args.plot:
-        import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
     if args.plasmons:
         print('Calculate plasmon spectrum')

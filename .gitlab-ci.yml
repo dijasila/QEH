@@ -6,8 +6,6 @@ test:
 docs_test:
   image: python:3.6
   script:
-    - wget https://cmr.fysik.dtu.dk/_downloads/f4f73c7821b716419dc1bcf73136ef70/chi-data.tar.gz
-    - tar -zxf chi-data.tar.gz
     - pip install .[docs]
     - which sphinx-build
     - cd $CI_PROJECT_DIR/docs
