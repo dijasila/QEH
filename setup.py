@@ -19,6 +19,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=['ase'],
+    extras_require={'docs': ['sphinx', 'sphinxcontrib-programoutput']},
     entry_points='''
         [console_scripts]
         qeh=qeh.qeh:main
