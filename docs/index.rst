@@ -20,6 +20,7 @@ heterostructure::
    :maxdepth: 2
    :caption: Contents:
 
+   install.rst
    tutorials.rst
 
 
