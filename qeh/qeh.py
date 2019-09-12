@@ -1477,7 +1477,7 @@ def plot_plasmons(hs, output,
                   plot_eigenvalues=False,
                   plot_density=False,
                   plot_potential=False,
-                  save_plots=False,
+                  save_plots=None,
                   show=True):
     eig, z, rho_z, phi_z, omega0, abseps = output
 
@@ -1494,7 +1494,7 @@ def plot_plasmons(hs, output,
         plt.ylabel(r'$\hbar\omega$ (eV)')
         plt.xlabel(r'q (Å$^{-1}$)')
     if save_plots is not None:
-        plt.savefig('Plasmon_Modes_' + str(save_plots))
+        plt.savefig('plasmon_modes' + str(save_plots))
 
     plt.figure()
     plt.title('Loss Function')
@@ -1504,7 +1504,7 @@ def plot_plasmons(hs, output,
     plt.xlabel(r'q (Å$^{-1}$)')
     plt.colorbar()
     if save_plots is not None:
-        plt.savefig('Loss_' + str(save_plots))
+        plt.savefig('loss' + str(save_plots))
 
     if plot_eigenvalues:
         plt.figure()
@@ -1512,7 +1512,7 @@ def plot_plasmons(hs, output,
             plt.plot(omega_w, eig[iq].real)
             plt.plot(omega_w, eig[iq].imag, '--')
         if save_plots is not None:
-            plt.savefig('Eigenvalues_' + str(save_plots))
+            plt.savefig('Eigenvalues' + str(save_plots))
 
     if plot_potential:
         plt.figure()
@@ -1522,7 +1522,7 @@ def plot_plasmons(hs, output,
         plt.plot(z, pots.T)
         plt.xlabel(r'z $(\AA)$')
         if save_plots is not None:
-            plt.savefig('Potential_' + str(save_plots))
+            plt.savefig('Potential' + str(save_plots))
 
     if plot_density:
         plt.figure()
@@ -1532,7 +1532,7 @@ def plot_plasmons(hs, output,
         plt.plot(z, dens.T)
         plt.xlabel(r'z $(\AA)$')
         if save_plots is not None:
-            plt.savefig('Density_' + str(save_plots))
+            plt.savefig('Density' + str(save_plots))
 
 
 def make_heterostructure(layers,
@@ -1779,7 +1779,7 @@ def main(args=None):
     parser.add_argument('--plot', action='store_true', help=help)
 
     help = ("Save plots to file")
-    parser.add_argument('--saveplots', type=str, default=None, help=help)
+    parser.add_argument('--save-plots', type=str, default=None, help=help)
 
     help = ("Add a substrate to the structure."
             "A file '-sub.npz' that contains the dielectric function of the "
@@ -1807,6 +1807,10 @@ def main(args=None):
     args = parser.parse_args(args)
     layers = args.layers
     paths = args.buildingblockpath
+    if args.save_plots is None:
+        save_plots = ''
+    else:
+        save_plots = args.save_plots
 
     layers = expand_layers(layers)
     # for il, layer in enumerate(layers):
@@ -1889,12 +1893,11 @@ def main(args=None):
     if args.plasmons:
         print('Calculate plasmon spectrum')
         tmp = hs.get_plasmon_eigenmodes(filename=args.plasmonfile)
-        if args.plot:
-            plot_plasmons(hs, tmp, plot_eigenvalues=args.eigenvalues,
-                          plot_potential=args.potential,
-                          plot_density=args.density,
-                          save_plots=args.saveplots,
-                          show=False)
+        plot_plasmons(hs, tmp, plot_eigenvalues=args.eigenvalues,
+                      plot_potential=args.potential,
+                      plot_density=args.density,
+                      save_plots=save_plots,
+                      show=False)
     if args.eels:
         q_abs, frequencies, eels_qw = hs.get_eels(dipole_contribution=True)
 
@@ -1902,6 +1905,8 @@ def main(args=None):
 
     if args.plot:
         plt.show()
+    else:
+        plt.close('all')
 
 
 if __name__ == '__main__':
