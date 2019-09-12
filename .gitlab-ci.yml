@@ -1,0 +1,7 @@
+docs_test:
+  image: python:3.6
+  script:
+    - pip install .[docs]
+    - which sphinx-build
+    - cd $CI_PROJECT_DIR/docs
+    - make
