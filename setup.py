@@ -25,7 +25,7 @@ setup(
         qeh=qeh.qeh:main
     ''',
     classifiers=[
-        'Development Status :: 2 - Pre-alpha',
+        'Development Status :: 2 - Pre-Alpha',
         'Environment :: Console',
         'License :: OSI Approved :: '
         'GNU General Public License v3 or later (GPLv3+)',
