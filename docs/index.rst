@@ -5,10 +5,22 @@
 
 Welcome to Quantum Electrostatic Heterostructure Model's documentation!
 =======================================================================
+The quantum electrostatic heterostructure (QEH) model is a fast
+and accurate model for simulating optical properties of stacks
+of 2D materials (heterostructures). This python package implements
+an easy command line interface to quickly calculate hetorostructure
+properties.
+
+Minimal example of calculating the plasmons of a graphene boron nitride
+heterostructure::
+
+   $ qeh graphene+doping=0.5 3BN graphene+doping=0.5 --plasmons --plot
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   tutorials.rst
 
 
 
