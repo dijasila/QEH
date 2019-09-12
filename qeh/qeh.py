@@ -921,9 +921,7 @@ class Heterostructure:
 
         kernel_qw = kernel_qij[:, None, k, k]
         eps_qw = kernel_qw / W_qw
-            
         return self.q_abs / Bohr, self.frequencies * Hartree, eps_qw
-
 
     def get_eels(self, dipole_contribution=False):
         r"""
@@ -1774,6 +1772,9 @@ def main(args=None):
     help = ("Save plasmon modes to file")
     parser.add_argument('--plasmonfile', type=str, default=None, help=help)
 
+    help = ("Calculate eels spectrum")
+    parser.add_argument('--eels', type=str, default=None, help=help)
+
     help = ("Plot calculated quantities")
     parser.add_argument('--plot', action='store_true', help=help)
 
@@ -1812,7 +1813,8 @@ def main(args=None):
     #     layers[il] = layer + '-chi.npz'
 
     # Make sure that the building block files can be found
-    link = "https://cmr.fysik.dtu.dk/_downloads/chi-data.tar.gz"
+    link = ('https://cmr.fysik.dtu.dk/_downloads/'
+            'f4f73c7821b716419dc1bcf73136ef70/chi-data.tar.gz')
     msg = """
 
     Building block file ({bb}) cannot be found!
