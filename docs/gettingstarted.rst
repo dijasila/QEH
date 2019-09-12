@@ -14,5 +14,6 @@ code.
 
 Command line interface
 ----------------------
+The basic CLI command is
 
-The 
+.. command-output:: qeh
