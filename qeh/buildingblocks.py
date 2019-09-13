@@ -264,8 +264,21 @@ def get_phonon_pol(omega_w, Z_avv, freqs, modes, m_a, cell_cv, eta=0.1e-3):
     return alpha_wvv
 
 
-def phonon_polarizability(bb, Z_avv, freqs, modes, m_a, cell_cv):
+def phonon_polarizability(bb, Z_avv, m_a, C_NN, cell_cv,
+                          overwrite_masses, gamma=0.1e-3):
     Hartree = units.Hartree
+    amuoverme = units._amu / units._me
+
+    for key, value in overwrite_masses.items():
+        id = int(key.split('_')[-1])
+        m_a[id] = value
+
+    # Calculate eigenfrequencies
+    Minv_NN = np.diag(np.repeat(1 / m_a, 3)**0.5)
+    D_NN = np.dot(Minv_NN, np.dot(C_NN, Minv_NN))
+    freq2_w, D_xw = np.linalg.eigh(D_NN, UPLO='U')
+    s = units._hbar * 1e10 / np.sqrt(units._e * units._amu)
+    freq_w = np.sqrt(freq2_w.astype(complex)) * s
 
     # Make new bb
     bb = dict(bb)
@@ -273,14 +286,14 @@ def phonon_polarizability(bb, Z_avv, freqs, modes, m_a, cell_cv):
     chiD_qw = bb['chiD_qw']
     q_abs = bb['q_abs']
     omega_w = bb['omega_w']
-    
+
     # Get phonons at q=0
     Z_vx = Z_avv.swapaxes(0, 1).reshape((3, -1))
-    f2_w, D_xw = (freqs[0] / Hartree)**2, modes[0]  # Pick out q=0
+    f2_w = (freq_w / Hartree)**2
 
     alpha_wvv = np.zeros((len(omega_w), 3, 3), dtype=complex)
-    m_x = np.repeat(m_a, 3)**0.5
-    gamma = 0.1e-3 / Hartree
+    m_x = np.repeat(m_a * amuoverme, 3)**0.5 
+    gamma = gamma / Hartree
     for f2, D_x in zip(f2_w, D_xw.T):
         if f2 < (1e-3 / Hartree)**2:
             continue
@@ -307,7 +320,7 @@ def phonon_polarizability(bb, Z_avv, freqs, modes, m_a, cell_cv):
     chiDnew_qw = chi0Dnew_qw / (1 - Vd_qw * chi0Dnew_qw)
     rhoMnew_qz = bb['drhoM_qz']
     rhoDnew_qz = bb['drhoD_qz']
-    
+
     newbb['chiM_qw'] = chiMnew_qw
     newbb['chiD_qw'] = chiDnew_qw
     newbb['omega_w'] = omega_w
@@ -315,5 +328,5 @@ def phonon_polarizability(bb, Z_avv, freqs, modes, m_a, cell_cv):
     newbb['drhoM_qz'] = rhoMnew_qz
     newbb['drhoD_qz'] = rhoDnew_qz
     newbb['isotropic_q'] = True
-    
+
     return newbb

@@ -1656,18 +1656,30 @@ def make_heterostructure(layers,
 
             if 'phonons' in modifier:
                 phonons = Path(origin[:-4] + '-phonons.npz')
+                subargs = modifier.split(',')
+                overwrite_masses = {}
+                eta = 0.1e-3
+                # Overwrite
+                for subarg in subargs:
+                    if '=' in subarg:
+                        key, value = subarg.split('=')
+                        if key == 'eta':
+                            eta = float(value)
+                        else:
+                            overwrite_masses[key] = float(value)
 
                 if not phonons.exists():
                     continue
                 dct = np.load(str(phonons))
 
-                Z_avv, freqs, modes, masses, cell = (dct['Z_avv'],
-                                                     dct['freqs'],
-                                                     dct['modes'],
-                                                     dct['masses'],
-                                                     dct['cell'])
-                bb = phonon_polarizability(bb, Z_avv, freqs, modes,
-                                           masses, cell)
+                Z_avv, C_NN, masses, cell = (dct['Z_avv'],
+                                             dct['C_NN'],
+                                             dct['masses'],
+                                             dct['cell'])
+
+                bb = phonon_polarizability(bb, Z_avv, masses, C_NN, cell,
+                                           overwrite_masses=overwrite_masses,
+                                           gamma=eta)
 
         # Save modified building block
         newlayer = '{}+{}'.format(origin, '+'.join(modifiers))
