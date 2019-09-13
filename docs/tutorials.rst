@@ -22,25 +22,6 @@ A thourough description of the QEH model can be found in [#qeh_theory]_:
     Dielectric genome of van der Waals heterostructures
     *Nano Letters* **15** (7), 4616-4621 (2015)
 
-Command line interface for the QEH code and getting the default dielectric BBs
-------------------------------------------------------------------------------
-The QEH code includes a simple command line interface (CLI) that makes playing
-around with different heterostructures easy. In order to use the CLI easily it is
-recommended to bind an alias to the qeh module
-(e. g. ``alias qeh="python3 -m gpaw.qeh"``). For example, plasmons in a
-doped graphene boron-nitride heterostructure can be calculated and plottet by
-
-.. command-output:: qeh graphene+doping=0.5 3BN graphene+doping=0.5 --plasmons --plot
-
-(Note that the first time you call this command you will most likely not have
-downloaded the pre-calculated dielectric building blocks. Simply follow the
-instructions shown in the terminal if this is the case, and run the command
-above again.)
-
-To view the full documentation for the QEH CLI use::
-
-.. command-output:: qeh -h
-
 
 Constructing a dielectric building block
 ----------------------------------------
