@@ -1708,6 +1708,19 @@ def make_heterostructure(layers,
     return het
 
 
+def list_building_blocks(defpath):
+    bbs = list(defpath.glob('*.npz'))
+    for bb in bbs:
+        filename = bb.name
+        if not filename.endswith('-chi.npz'):
+            continue
+        material = filename.split('-chi.npz')[0]
+        description = material
+        if (defpath / Path(f'{material}-phonons.npz')).is_file():
+            description += '(+phonons)'
+        print(description)
+
+
 def download_bb(target):
     import tarfile
     import urllib.request
@@ -1767,7 +1780,7 @@ def main(args=None):
     Please see the provided examples in the bottom.
     """
 
-    parser.add_argument('layers', nargs='+', help=help, type=str)
+    parser.add_argument('layers', nargs='?', help=help, type=str)
     help = ("For above example: '6.2 3.2 6.2' gives thicknesses of "
             "6.2 3.2 and 6.2 AA to MoS2, graphene and WS2 "
             "respectively. If not set, the QEH module will use a "
@@ -1829,7 +1842,11 @@ def main(args=None):
                         nargs=3,
                         help=help, type=float)
 
+    help = 'List the available data and building blocks'
+    parser.add_argument('--list', help=help, action='store_true')
+
     args = parser.parse_args(args)
+
     layers = args.layers
     paths = args.buildingblockpath
     if args.save_plots is None:
@@ -1837,14 +1854,16 @@ def main(args=None):
     else:
         save_plots = args.save_plots
 
-    layers = expand_layers(layers)
-
     if not defpath.is_dir():
         print('First run of QEH package, downloading dielectric bb\'s - '
               'this could take a couple of minutes.')
         download_bb(defpath)
         print('Done.')
 
+    if args.list:
+        return list_building_blocks(defpath)
+
+    layers = expand_layers(layers)
     # Locate files for layers
     print('Looking for building blocks')
     layer_paths = []
