@@ -89,8 +89,8 @@ effective masses (marked with ``(d)``).
 .. [#C2DB] http://c2db.fysik.dtu.dk
 
 
-Phonons
-=======
+Phonons and isotopes
+====================
 .. _phonons:
 
 For some polar semi conductors the QEH code implements the lattice
@@ -112,3 +112,14 @@ lattice response.
      
    then the calculated results will only inlude the electronic
    response.
+
+
+When calculating the lattice response it is possible to manually
+specify the isotopic mass of the atoms that constitute the
+monolayer. Similar to supplying arguments for the doping modifier if
+we can to specify the isotopic mass of boron in BN we can do::
+
+  $ qeh 5BN+phonons,m_B=10 5BN+phonons,m_B=11
+
+which creates a heterostructure consisting of 5 B :sup:`10` N
+monolayers on 5 B :sup:`11` N monolayers.
