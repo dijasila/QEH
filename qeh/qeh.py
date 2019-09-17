@@ -1710,14 +1710,51 @@ def make_heterostructure(layers,
 
 def list_building_blocks(defpath):
     bbs = list(defpath.glob('*.npz'))
+    columns = []
     for bb in bbs:
+        row = ['', '', '', '', '']
         filename = bb.name
         if not filename.endswith('-chi.npz'):
             continue
         material = filename.split('-chi.npz')[0]
-        description = material
+        row[0] = material
+
+        for key in default_thicknesses:
+            if 'icsd' in key:
+                key2 = key.split('-icsd-')[0]
+            else:
+                key2 = key
+            if key2 == material:
+                thickness = default_thicknesses[key]
+                row[1] = f'Thickness = {thickness} Å'
+                break
+
         if (defpath / Path(f'{material}-phonons.npz')).is_file():
-            description += '(+phonons)'
+            row[2] = '+phonons available'
+
+        for key, val in default_ehmasses.items():
+            if key.startswith(material):
+                emass = val['emass1']
+                hmass = val['hmass1']
+                row[3] = f'e_mass (d) = {emass} me'
+                row[4] = f'h_mass = {hmass} me'
+        columns.append(row)
+
+    widths = [0, 0, 0, 0, 0]
+    for row in columns:
+        for ir, elem in enumerate(row):
+            widths[ir] = max([len(elem), widths[ir]])
+
+    descriptions = []
+    for row in columns:
+        description = ''
+        for elem, width in zip(row, widths):
+            description += f'{elem :<{width}} | '
+        descriptions.append(description)
+
+    descriptions.sort()
+    print('Avalailable monolayers')
+    for description in descriptions:
         print(description)
 
 
