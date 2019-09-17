@@ -123,3 +123,18 @@ we can to specify the isotopic mass of boron in BN we can do::
 
 which creates a heterostructure consisting of 5 B :sup:`10` N
 monolayers on 5 B :sup:`11` N monolayers.
+
+Scripting
+=========
+Sometimes the command line interface to the QEH package is not
+flexible enough for you needs. QEH therefore also provides an
+easy-to-use Python API which allows you to programmatically customize
+your QEH calculation. For example to calculate the optical response of
+graphene a graphene multilayer stack we can do
+
+.. literalinclude:: grapheneplasmons.py
+
+The main function to call is
+``make_heterostructure`` which takes a ``layers`` keyword which is a
+list of layer descriptions identical to the layer descriptions of
+the CLI.
