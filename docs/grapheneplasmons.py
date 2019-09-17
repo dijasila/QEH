@@ -2,12 +2,12 @@ from matplotlib import pyplot as plt
 from qeh import make_heterostructure
 import numpy as np
 
-layers = ['10graphene+doping=0.1,eta=1e-3']
-het = make_heterostructure(layers, frequencies=[1e-5, 0.2, 300],
-                           momenta=[0.0001, 0.1, 300])
-het.get_plasmon_eigenmodes(filename='bnmodes.npz')
+layers = ['3graphene+doping=0.1,eta=1e-3']
+het = make_heterostructure(layers, frequencies=[1e-5, 0.2, 500],
+                           momenta=[0.0001, 0.02, 300])
+het.get_plasmon_eigenmodes(filename='graphenemodes.npz')
 
-data = np.load('bnmodes.npz')
+data = np.load('graphenemodes.npz')
 
 q_q = data['q_q']
 w_w = data['omega_w']
