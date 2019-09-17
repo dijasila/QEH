@@ -136,7 +136,7 @@ graphene a graphene multilayer stack we can do
 
 .. image:: graphene-multilayer-modes.png
    :width: 49%
-		    
+
 The main function to call is
 ``make_heterostructure`` which takes a ``layers`` keyword which is a
 list of layer descriptions identical to the layer descriptions of
