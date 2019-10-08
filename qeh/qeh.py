@@ -1763,7 +1763,7 @@ def download_bb(target):
     import urllib.request
     targz = str(target) + '.tar.gz'
     url = ('https://cmr.fysik.dtu.dk/_downloads/'
-           'f4f73c7821b716419dc1bcf73136ef70/chi-data.tar.gz')
+           'd128e774548fcf6629ba7ba2518002ba/chi-data-v2.tar.gz')
     urllib.request.urlretrieve(url, targz)
     tar = tarfile.open(targz, "r:gz")
     tar.extractall(str(target.parent))
