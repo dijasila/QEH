@@ -1726,20 +1726,21 @@ def list_building_blocks(defpath):
                 key2 = key
             if key2 == material:
                 thickness = default_thicknesses[key]
-                row[1] = f'Thickness = {thickness} Å'
+                row[1] = f'{thickness} Å'
                 break
 
         if (defpath / Path(f'{material}-phonons.npz')).is_file():
-            row[2] = '+phonons available'
+            row[2] = 'available'
 
         for key, val in default_ehmasses.items():
             if key.startswith(material):
                 emass = val['emass1']
                 hmass = val['hmass1']
-                row[3] = f'e_mass (d) = {emass} me'
-                row[4] = f'h_mass = {hmass} me'
+                row[3] = f'{emass} me'
+                row[4] = f'{hmass} me'
         columns.append(row)
 
+    columns.insert(0, ['Name', 'Thickness', 'phonons', 'e_mass (d)', 'h_mass'])
     widths = [0, 0, 0, 0, 0]
     for row in columns:
         for ir, elem in enumerate(row):
@@ -1752,8 +1753,11 @@ def list_building_blocks(defpath):
             description += f'{elem :<{width}} | '
         descriptions.append(description)
 
+    header = descriptions.pop(0)
+    print(header)
+    print('-' * len(header))
     descriptions.sort()
-    print('Avalailable monolayers')
+
     for description in descriptions:
         print(description)
 
