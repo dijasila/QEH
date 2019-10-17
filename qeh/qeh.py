@@ -378,8 +378,9 @@ class Heterostructure:
                         self.potential_model(self.myq_abs[iq], self.z_big,
                                              self.z0[k]))
                     dphi_array[self.dim // self.n_layers * k,
-                               iq, i_1: i_2 + 1] = (fm(z_big[i_1: i_2 + 1]) +
-                                                    1j * fm2(z_big[i_1: i_2 + 1]))
+                               iq, i_1: i_2 + 1] = \
+                        (fm(z_big[i_1: i_2 + 1]) +
+                         1j * fm2(z_big[i_1: i_2 + 1]))
                     if self.chi_dipole is not None:
                         dphi_array[2 * k + 1, iq] = \
                             self.potential_model(self.myq_abs[iq], self.z_big,
@@ -390,7 +391,7 @@ class Heterostructure:
                             fd2(z_big[i_1: i_2 + 1])
 
         return dphi_array
-    
+
     def get_z_grid(self, z, z_lim=None):
         dz = z[1] - z[0]
         if z_lim is None:
@@ -443,7 +444,7 @@ class Heterostructure:
         f_z[:] = - 4 * np.pi * drho[:]
         f_z[0] = bc_v0
         f_z[Nint] = bc_vN
-                                                  
+
         ab = np.zeros((3, Nint + 1), complex)
         ab[0, 2:] = 1. / dz**2
         ab[1, 1:-1] = -2 / dz**2 - q**2
@@ -555,7 +556,7 @@ class Heterostructure:
 
         chi_qwij = np.zeros((self.mynq, len(self.frequencies),
                              self.dim, self.dim), dtype=complex)
-        
+
         dot = np.dot
         inv = np.linalg.inv
         eye = np.eye(self.dim)
@@ -742,7 +743,7 @@ class Heterostructure:
         else:
             q_temp, W_q, xxx = self.get_exciton_screened_potential(e_distr,
                                                                    h_distr)
- 
+
         from scipy.special import jn
 
         inter = False
@@ -882,11 +883,11 @@ class Heterostructure:
             Nw = len(self.frequencies)
 
         eps_qwij = self.get_eps_matrix(step_potential=True)[:, :Nw]
-        
+
         N = self.n_layers
         Nq = self.mynq
         epsM_qw = np.zeros([Nq, Nw], dtype=complex)
-        
+
         for iw in range(Nw):
             for iq in range(Nq):
                 eps_ij = eps_qwij[iq, iw]
@@ -1062,7 +1063,7 @@ class Heterostructure:
         # Upper cutoff q_c = q[1] / 2.
         q_c = self.q_abs[1] / 2.
         # Integral for q=0: \int_0^q_c \frac{q^3}{(q^2 + q_z^2)^2} dq
-        I = 2 * np.pi / vol * \
+        I1 = 2 * np.pi / vol * \
             (q_z**2 / 2. / (q_c**2 + q_z**2) - 0.5 +
              0.5 * np.log((q_c / q_z)**2 + 1))
         I2 = 2 * np.pi / vol / 2. * (1. / q_z**2 - 1. / (q_z**2 + q_c**2))
@@ -1076,7 +1077,7 @@ class Heterostructure:
                 eels_temp[iw] += temp
 
             if np.isclose(self.q_abs[iq], 0):
-                eels_temp *= (4 * np.pi)**2 * I
+                eels_temp *= (4 * np.pi)**2 * I1
 
             else:
                 eels_temp *= 1. / (self.q_abs[iq]**2 + q_z**2)**2
