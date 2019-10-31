@@ -10,8 +10,10 @@ import scipy
 Hartree = ase.units.Hartree
 Bohr = ase.units.Bohr
 
-default_ehmasses = {'BPx': {'emass1': [0.17, 1.12], 'hmass1': [0.15, 6.35]},
-                    'BPy': {'emass1': [0.17, 1.12], 'hmass1': [0.15, 6.35]},
+default_ehmasses = {'BPx': {'emass1': 0.17, 'emass2': 1.12,
+                            'hmass1': 0.15, 'hmass2': 6.35},
+                    'BPy': {'emass1': 1.12, 'emass2': 0.17,
+                            'hmass1': 6.35, 'hmass2': 0.15},
                     'H-CrO2-NM': {'emass1': 0.875, 'hmass1': 1.442},
                     'H-CrS2-NM': {'emass1': 0.872, 'hmass1': 0.883},
                     'H-CrSe2-NM': {'emass1': 0.936, 'hmass1': 0.955},
@@ -1158,6 +1160,49 @@ class Heterostructure:
         rhoind_qz = self.collect_qw(rhoind_qz)
         return self.z_big * Bohr, rhoind_qz, Vind_qz, self.z0 * Bohr
 
+    @timer('Calculate propagation lengths')
+    def get_propagation_lengths(self, filename=None):
+        """
+        Get eigenvalues from which imaginary part of q can be extracted.
+        """
+
+        assert self.world.size == 1
+
+        Nw = len(self.frequencies)
+        Nq = self.mynq
+        eig_qwl = np.zeros([Nq, Nw, self.dim], dtype=complex)
+        for iq in range(Nq):
+            if (1 + iq) % (Nq // 10) == 0:
+                print('{}%'.format(np.round((1 + iq) / Nq, 1) * 100))
+
+            eps_wij = self.get_eps_matrix(iq_q=[iq])[0]
+            invkernel_ij = np.linalg.inv(self.kernel_qij[iq])
+            op_wij = np.dot(invkernel_ij, eps_wij).transpose(1, 0, 2)
+            eig_wl, vec_wll = np.linalg.eig(op_wij)
+            eig_wl = np.sort(eig_wl, axis=1)
+            eig_qwl[iq] = eig_wl
+            # We have to sort the eigenvalues
+            for iw in range(1, Nw):
+                de_l = 1 / eig_qwl[iq, iw - 1] - \
+                       1 / eig_qwl[iq, iw - 2]
+                e_l = 1 / eig_qwl[iq, iw - 1] + de_l
+
+                delta_ij = np.abs(1 / e_l[:, None] -
+                                  eig_qwl[iq, iw])
+                indices = np.argsort(delta_ij, axis=None)
+                indices = np.unravel_index(indices, (self.dim, self.dim))
+                index = [None for i in range(self.dim)]
+                i0_i = []
+                for i0, i1 in zip(*indices):
+                    # print(i0, i1)
+                    if i0 not in i0_i and i1 not in index:
+                        i0_i.append(i0)
+                        index[i0] = i1
+                assert self.dim == len(np.unique(index))
+                eig_qwl[iq, iw, :] = np.copy(eig_qwl[iq, iw][index])
+
+        return self.q_abs / Bohr, self.frequencies * Hartree, eig_qwl / Bohr**2
+
     @timer('Calculate plasmon eigenmodes')
     def get_plasmon_eigenmodes(self, filename=None):
         """
@@ -1474,6 +1519,105 @@ def expand_layers(structure):
     return newlist
 
 
+def plot_propagation_lengths(q_q, w_w, eigs_qwl):
+    from matplotlib import pyplot as plt
+    # iqs = [15]
+    # ndim = eigs_qwl.shape[2]
+
+    deltaq_qwl = (q_q[:, None, None] *
+                  (1 - np.sqrt(1 - eigs_qwl / q_q[:, None, None]**2)))
+    data = []
+    for delta_qw in deltaq_qwl.transpose(2, 0, 1):
+        for iq, delta_w in enumerate(delta_qw):
+            resgn_w = np.sign(np.real(delta_w))
+            mask_w = np.abs(resgn_w[1:] - resgn_w[:-1]) > 0
+            ind_w = np.argwhere(mask_w)[:, 0]
+            for ind in ind_w:
+                w1 = w_w[ind]
+                w2 = w_w[ind + 1]
+                a = (delta_w[ind + 1] - delta_w[ind]) / (w2 - w1)
+                omegap = w1 - delta_w[ind].real / a.real
+                delta = delta_w[ind] + (omegap - w1) * a
+                data.append((q_q[iq], omegap, delta))
+
+    q_x = []
+    fom_x = []
+    omegap_x = []
+    for q, omegap, delta in data:
+        # scatterdata_x.append(q)
+        # scatterdata_y.append(omegap)
+        q_x.append(q)
+        omegap_x.append(omegap)
+        fom_x.append(q / np.imag(delta))
+
+    # plt.scatter(q_x, omegap_x)
+    plt.figure()
+    fom_x = np.array(fom_x)
+    # fom_x[fom_x > 1] = 1
+    # alpha_x = fom_x / np.max(fom_x)
+    # color = (1 - alpha_x[:, None]) * np.array([1, ] * 3)
+    plt.scatter(q_x, omegap_x)
+
+    plt.figure()
+    plt.scatter(q_x, np.log10(fom_x))
+    plt.ylabel('FOM')
+    # plt.ylabel(r'$\hbar\omega$ (eV)')
+    plt.xlabel(r'$q$ (Å$^{-1}$)')
+
+    # plt.figure()
+    # for iq in iqs:
+    #     for il in [0]:  # range(ndim):
+    #         plt.plot(w_w, deltaq_qwl[iq, :, il].real, label=il)
+    # plt.legend()
+
+    # plt.figure()
+    # for iq in iqs:
+    #     for il in [0]:  # range(ndim):
+    #         plt.plot(w_w, deltaq_qwl[iq, :, il].real, label='deltaq real')
+    #         plt.plot(w_w, deltaq_qwl[iq, :, il].imag, label='deltaq imag')
+    #         plt.plot(w_w, eigs_qwl[iq, :, il].real, label='eig real')
+    #         plt.plot(w_w, eigs_qwl[iq, :, il].imag, label='eig imag')
+
+    # plt.legend()
+    # plt.figure()
+    # for iq in iqs:
+    #     for il in range(ndim):
+    #         plt.plot(deltaq_qwl[iq, :, il].real,
+    #                  deltaq_qwl[iq, :, il].imag, '-', label=il,
+    #                  color=f'C{il}')
+    # plt.legend()
+
+    # sum_qw = np.imag(np.sum(eigs_qwl, axis=2))
+    # plt.figure()
+    # plt.pcolor(q_q, w_w, np.log10(sum_qw.T))
+    # plt.scatter(q_x, omegap_x, s=2, color='w', alpha=0.5)
+    # plt.colorbar()
+
+    # deltaq_qwl = eigs_qwl / (2 * q_q[:, None, None])
+    # deltaq_qwl = np.real(deltaq_qwl) + 1j * np.abs(np.imag(deltaq_qwl))
+    # proplength_qwl = (q_q[:, None, None] /
+    #                   deltaq_qwl.imag)
+    # plt.figure()
+    # plt.pcolor(q_q, w_w, np.log10(-np.real(imq_qwl[..., 0].T)))
+    # plt.colorbar()
+
+    # for i in range(ndim):
+    #     # plt.figure()
+    #     # plt.title(i)
+    #     # plt.pcolor(np.arange(len(q_q)), w_w,
+    #     #            np.log10(np.imag(eigs_qwl[..., i].T)))
+    #     # plt.colorbar()
+    #     plt.figure()
+    #     plt.title(i)
+    #     plt.pcolor(np.arange(len(q_q)), w_w,
+    #                np.log10(np.abs(np.real(eigs_qwl[..., i].T))))
+    #     plt.colorbar()
+
+    # plt.figure()
+    # plt.pcolor(q_q, w_w, np.log10(proplength_qwl[:, :, 0].T))
+    # plt.colorbar()
+
+
 def plot_plasmons(hs, output,
                   plot_eigenvalues=False,
                   plot_density=False,
@@ -1597,100 +1741,7 @@ def make_heterostructure(layers,
         layers[il] = layer[:ind] + '_int' + layer[ind:]
 
     # Parse args and modify building blocks accordingly
-    from qeh.buildingblocks import (GrapheneBB,
-                                    dopedsemiconductor,
-                                    phonon_polarizability)
-    for layer in set(layers):
-        # Everything that comes after a '+' is a modifier
-        tmp = layer.split('+')
-        modifiers = tmp[1:]
-
-        if not len(modifiers):
-            continue
-
-        origin = tmp[0]
-        originpath = origin + '-chi.npz'
-
-        bb = np.load(originpath)
-
-        for im, modifier in enumerate(modifiers):
-            if 'doping' in modifier:
-                subargs = modifier.split(',')
-                kwargs = {'doping': 0,
-                          'temperature': 0,
-                          'eta': 1e-4,
-                          'direction': 'x'}
-
-                # Try to find emass in default values
-                for key, val in default_ehmasses.items():
-                    if origin[:-4] in key:
-                        kwargs['effectivemass'] = val['emass1']
-
-                # Overwrite
-                for subarg in subargs:
-                    key, value = subarg.split('=')
-                    if key == 'T':
-                        key = 'temperature'
-                    elif key == 'em':
-                        key = 'effectivemass'
-                    elif key == 'direction':
-                        try:
-                            kwargs[key] = float(value)
-                        except ValueError:
-                            kwargs[key] = value
-                        continue
-                    kwargs[key] = float(value)
-
-                mod = ['{}={}'.format(str(key), str(val))
-                       for key, val in kwargs.items()]
-                modifiers[im] = ','.join(mod)
-
-                if 'graphene' in layer:
-                    # Treat graphene specially, since in this case we are using
-                    # an analytical approximation of the building block
-                    assert np.allclose(kwargs['temperature'], 0.0), \
-                        print('Graphene currently cannot be at a finite temp.')
-                    bb = GrapheneBB(bb, doping=kwargs['doping'],
-                                    eta=kwargs['eta'])
-                else:
-                    bb = dopedsemiconductor(bb, **kwargs)
-
-            if 'phonons' in modifier:
-                phonons = Path(origin[:-4] + '-phonons.npz')
-                subargs = modifier.split(',')
-                overwrite_masses = {}
-                eta = 0.1e-3
-                # Overwrite
-                for subarg in subargs:
-                    if '=' in subarg:
-                        key, value = subarg.split('=')
-                        if key == 'eta':
-                            eta = float(value)
-                        else:
-                            overwrite_masses[key] = float(value)
-
-                if not phonons.exists():
-                    continue
-                dct = np.load(str(phonons))
-
-                Z_avv, C_NN, masses, cell = (dct['Z_avv'],
-                                             dct['C_NN'],
-                                             dct['masses'],
-                                             dct['cell'])
-
-                bb = phonon_polarizability(bb, Z_avv, masses, C_NN, cell,
-                                           overwrite_masses=overwrite_masses,
-                                           gamma=eta)
-
-        # Save modified building block
-        newlayer = '{}+{}'.format(origin, '+'.join(modifiers))
-        newlayerpath = newlayer + '-chi.npz'
-        np.savez_compressed(newlayerpath, **bb)
-
-        for il, layer2 in enumerate(layers):
-            if layer2 == layer:
-                layers[il] = newlayer
-
+    layers = apply_modifiers(layers)
     thicknesses = np.array(thicknesses)
 
     # Calculate distance between layers
@@ -1822,7 +1873,7 @@ def main(args=None):
     Please see the provided examples in the bottom.
     """
 
-    parser.add_argument('layers', nargs='?', help=help, type=str)
+    parser.add_argument('layers', nargs='*', help=help, type=str)
     help = ("For above example: '6.2 3.2 6.2' gives thicknesses of "
             "6.2 3.2 and 6.2 AA to MoS2, graphene and WS2 "
             "respectively. If not set, the QEH module will use a "
@@ -1839,6 +1890,9 @@ def main(args=None):
 
     help = ("Calculate plasmon spectrum")
     parser.add_argument('--plasmons', action='store_true', help=help)
+
+    help = ("Calculate propagation lengths")
+    parser.add_argument('--propagation', action='store_true', help=help)
 
     help = ("Calculate eigenvalues of dielectric matrix")
     parser.add_argument('--eigenvalues', action='store_true', help=help)
@@ -1904,6 +1958,9 @@ def main(args=None):
 
     if args.list:
         return list_building_blocks(defpath)
+
+    if not type(layers) == list:
+        layers = [layers]
 
     layers = expand_layers(layers)
     # Locate files for layers
@@ -1975,12 +2032,95 @@ def main(args=None):
     if args.eels:
         q_abs, frequencies, eels_qw = hs.get_eels(dipole_contribution=True)
 
+    if args.propagation:
+        q_q, w_w, eigs_qw = hs.get_propagation_lengths()
+        plot_propagation_lengths(q_q, w_w, eigs_qw)
     hs.timer.write()
 
     if args.plot:
         plt.show()
     else:
         plt.close('all')
+
+
+def apply_modifiers(layers):
+    from qeh.modifiers import (dopedsemiconductor,
+                               GrapheneBB,
+                               phonon_polarizability)
+
+    import copy
+    layers = copy.deepcopy(layers)
+    for layer in set(layers):
+        # Everything that comes after a '+' is a modifier
+        tmp = layer.split('+')
+        modifiers = tmp[1:]
+
+        if not len(modifiers):
+            continue
+
+        origin = tmp[0]
+        originpath = origin + '-chi.npz'
+        name = origin[:-4]
+        bb = np.load(originpath)
+        for im, modifier in enumerate(modifiers):
+            # Convert modifier args to dict
+            modname, *modargs = modifier.split(',')
+            modkwargs = {}
+            for modarg in modargs:
+                key, value = modarg.split('=')
+                modkwargs[key] = float(value)
+
+            if modname == 'semi':
+                # Then we add doped semi-conductor contribution
+                kwargs = {'doping': 0,
+                          'temperature': 0,
+                          'eta': 1e-4,
+                          'theta': 0,
+                          'mex': 1,
+                          'mey': 1}
+                # Try to find emass in default values
+                for key, val in default_ehmasses.items():
+                    if name in key:
+                        kwargs['mex'] = val.get('emass1')
+                        kwargs['mey'] = val.get('emass2', val.get('emass1'))
+                modfunction = dopedsemiconductor
+            elif modname == 'dopedgraphene':
+                # Treat graphene specially, since in this case we are using
+                # an analytical approximation of the building block
+                kwargs = {'doping': 0,
+                          'eta': 1e-4}
+
+                modfunction = GrapheneBB
+            elif modname == 'phonons':
+                phonons = Path(origin[:-4] + '-phonons.npz')
+                dct = np.load(str(phonons))
+                kwargs = {'eta': 1e-4}
+                Z_avv, C_NN, masses, cell, symbols = (dct['Z_avv'],
+                                                      dct['C_NN'],
+                                                      dct['masses'],
+                                                      dct['cell'],
+                                                      dct['symbols'])
+
+                from functools import partial
+                modfunction = partial(phonon_polarizability, Z_avv=Z_avv,
+                                      m_a=masses, C_NN=C_NN,
+                                      cell_cv=cell, symbols=symbols)
+            kwargs.update(modkwargs)
+            bb = modfunction(bb, **kwargs)
+            # Overwrite
+            mod = ['{}={}'.format(str(key), str(val))
+                   for key, val in kwargs.items()]
+            modifiers[im] = ','.join([modname] + mod)
+
+        # Save modified building block
+        newlayer = '{}+{}'.format(origin, '+'.join(modifiers))
+        newlayerpath = newlayer + '-chi.npz'
+        np.savez_compressed(newlayerpath, **bb)
+
+        for il, layer2 in enumerate(layers):
+            if layer2 == layer:
+                layers[il] = newlayer
+    return layers
 
 
 if __name__ == '__main__':
