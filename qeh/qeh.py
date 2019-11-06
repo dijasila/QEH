@@ -1839,20 +1839,23 @@ def main(args=None):
     to set this as an alias in your bashrc.)
 
     Calculate graphene plasmons with doping and plot them:
-        qeh graphene+doping=0.5 --plasmons --plot
+        qeh graphene+dopedgraphene,doping=0.5 --plasmons --plot
 
     Same but 5 layers of graphene and save to numpy npz file:
-        qeh 5graphene+doping=0.5 --plasmons --plasmonfile plasmons.npz
+        qeh 5graphene+dopedgraphene,doping=0.5 --plasmons \
+--plasmonfile plasmons.npz
 
     Graphene-Boron Nitride-Graphene heterostructure with doping and phonons:
-        qeh graphene+doping=0.5 3BN+phonons graphene+doping=0.5
+        qeh graphene+dopedgraphene,doping=0.5 3BN+phonons graphene+\
+dopedgraphene,doping=0.5
 
     Set up doped MoS2 at finite temperatures (T is in eV) with a
     custom relaxation rate:
-        qeh H-MoS2+doping=0.1,T=25e-3,eta=1e-3,em=0.43
+        qeh H-MoS2+semi,doping=0.1,T=25e-3,eta=1e-3,em=0.43
 
     Set custom omega and q grid:
-        qeh 2graphene+doping=0.5 --q 1e-3 0.1 100 --omega 1e-3 2 1000
+        qeh 2graphene+dopedgraphene,doping=0.5 --q 1e-3 0.1 100 \
+--omega 1e-3 2 1000
 
     """
     formatter = argparse.RawDescriptionHelpFormatter
@@ -2046,7 +2049,9 @@ def main(args=None):
 def apply_modifiers(layers):
     from qeh.modifiers import (dopedsemiconductor,
                                GrapheneBB,
-                               phonon_polarizability)
+                               phonon_polarizability,
+                               rotate_bb)
+    from ast import literal_eval
 
     import copy
     layers = copy.deepcopy(layers)
@@ -2068,7 +2073,7 @@ def apply_modifiers(layers):
             modkwargs = {}
             for modarg in modargs:
                 key, value = modarg.split('=')
-                modkwargs[key] = float(value)
+                modkwargs[key] = literal_eval(value)
 
             if modname == 'semi':
                 # Then we add doped semi-conductor contribution
@@ -2105,6 +2110,10 @@ def apply_modifiers(layers):
                 modfunction = partial(phonon_polarizability, Z_avv=Z_avv,
                                       m_a=masses, C_NN=C_NN,
                                       cell_cv=cell, symbols=symbols)
+            elif modname == 'rotate':
+                kwargs = {'theta': 0,
+                          'layer': None}
+                modfunction = rotate_bb
             kwargs.update(modkwargs)
             bb = modfunction(bb, **kwargs)
             # Overwrite
