@@ -1854,8 +1854,8 @@ dopedgraphene,doping=0.5
         qeh H-MoS2+semi,doping=0.1,T=25e-3,eta=1e-3,em=0.43
 
     Set custom omega and q grid:
-        qeh 2graphene+dopedgraphene,doping=0.5 --q 1e-3 0.1 100 \
---omega 1e-3 2 1000
+        qeh 2graphene+dopedgraphene,doping=0.5 -q 1e-3 0.1 100 \
+-w 1e-3 2 1000
 
     """
     formatter = argparse.RawDescriptionHelpFormatter
@@ -1930,14 +1930,15 @@ dopedgraphene,doping=0.5
     help = ("Custom frequencies to represent quantities on (in eV). "
             "The format is: min. frequency, max. frequency, "
             "number of frequencies. E. g.: 0.001 1.0 500")
-    parser.add_argument('--omega', default=[0.001, 1.0, 500],
+    parser.add_argument('-w', '--omega', default=[0.001, 1.0, 500],
                         nargs=3,
                         help=help, type=float)
 
     help = ("Custom momentas to respresent quantities on (in AA^-1). "
             "The format is: min. q, max. q, number of q's. "
             "E. g.: 0.0001 0.15 100")
-    parser.add_argument('--q', default=[0.0001, 0.15, 200],
+    parser.add_argument('-q', '--momentum',
+                        default=[0.0001, 0.15, 200],
                         nargs=3,
                         help=help, type=float)
 
@@ -2018,7 +2019,7 @@ dopedgraphene,doping=0.5
     print('Initializing heterostructure')
     hs = make_heterostructure(layers,
                               thicknesses=args.thicknesses,
-                              momenta=args.q,
+                              momenta=args.momentum,
                               frequencies=args.omega,
                               substrate=substrate)
 
