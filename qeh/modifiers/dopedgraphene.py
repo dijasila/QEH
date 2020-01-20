@@ -43,7 +43,7 @@ def P(q_q, w_w, vf, kf):
 
     # Region III
     mask3 = np.real(w_qw) - vf * q_qw >= 2 * vf * kf
-    Pol_qw += mask3 * b * (F1 - F2 - 1j) * np.pi
+    Pol_qw += mask3 * b * ((F1 - F2) - 1j * np.pi)
 
     # Region IV
     mask4 = (vf * q_qw >= np.real(w_qw)) * \

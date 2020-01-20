@@ -14,7 +14,7 @@ properties.
 Minimal example of calculating the plasmons of a graphene boron nitride
 heterostructure::
 
-   $ qeh graphene+doping=0.5 3BN graphene+doping=0.5 --plasmons --plot
+   $ qeh graphene+dopedgraphene,doping=0.5 3BN graphene+doping=0.5 --plasmons --plot
 
 .. toctree::
    :maxdepth: 2

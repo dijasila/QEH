@@ -25,12 +25,12 @@ There are many options for the CLI but most important is the
 heterostructure. For example to build a heterostructure consisting of
 doped graphene on 3 layers of boron nitride do::
 
-  $ qeh graphene+doping=0.5 3BN
+  $ qeh graphene+dopedgraphene,doping=0.5 3BN
 
 For example the plasmons of a doped graphene on three layers of boron
 nitride can be calculated and saved as::
 
-  $ qeh graphene+doping=0.5 3BN --plasmons --save-plots "_g-3BN"
+  $ qeh graphene+dopedgraphene,doping=0.5 3BN --plasmons --save-plots "_g-3BN"
 
 which creates a figure ``loss_g-3BN.png`` containing the loss spectrum
 and a figure ``plasmon_modes_g-3BN.png`` which traces the plasmon
@@ -44,7 +44,8 @@ modes:
 
 Here we introduced a couple of key concepts. You can modify layers
 with the ``+`` syntax. For example, the example above used the layer
-modifier ``doping=0.5`` which doped graphene. See the doping_ section
+modifier ``dopedgraphene,doping=0.5`` which dopes graphene.
+ee the doping_ section
 for details about this modifier. Because boron nitride is polar there
 will be an additional contribution to the dielectric properties from
 its phonons. These have been calculated as well and can be included
@@ -76,7 +77,7 @@ The doping modifier can be used to dope graphene or a semi-conducting
 monolayer. The doping modifier takes additional arguments which can be
 providided using a comma separated list::
 
-  $ qeh H-MoS2+doping=0.1,T=25e-3,eta=1e-3,em=0.43
+  $ qeh H-MoS2+semi,doping=0.1,T=25e-3,eta=1e-3,em=0.43
 
 Here we dope MoS2 in the H phase with at a finite temperature
 of 25 meV (``T=25e-3``), a relaxation rate of 3 meV (``eta=1e-3``) and
