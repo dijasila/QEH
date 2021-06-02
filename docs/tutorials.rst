@@ -99,7 +99,7 @@ from the QEH module. For example, to make a similar calculation of graphene hBN
 heterostructure plasmons to the example in the description of command line
 interface simply do::
 
-  from gpaw.qeh import make_heterostructure, plot_plasmons
+  from qeh import make_heterostructure, plot_plasmons
 
   layers = ['graphene+doping=0.5', '3BN', 'graphene+doping=0.5']
   het = make_heterostructure(layers)
@@ -110,7 +110,7 @@ The QEH module then uses default values for layer thicknesses calculated from th
 
 ``make_heterostructure`` takes additional arguments for user specified layer thicknesses and momentum and frequency grids. To use these simply do::
 
-  from gpaw.qeh import make_heterostructure, plot_plasmons
+  from qeh import make_heterostructure, plot_plasmons
 
   layers = ['graphene+doping=0.5', '3BN']
   omegamin = 0.001  # Do not set to zero
@@ -131,7 +131,7 @@ Doped semiconductors
 With the QEH module it is possible to calculate the response of doped semi
 conductors. This is done by specifying a doping level and an effective mass::
 
-  from gpaw.qeh import make_heterostructure, plot_plasmons
+  from qeh import make_heterostructure, plot_plasmons
 
   layers = ['H-MoS2+doping=0.1,em=0.43', 'BN',
             'H-MoS2+doping=0.1,em=0.43']
@@ -149,7 +149,7 @@ electronic response). This effect can be included by adding ´´+phonons´´
 similar to how doping is included for semiconductors. For example to calculate
 coupling between graphene plasmons and phonons in boron nitride do::
 
-  from gpaw.qeh import make_heterostructure, plot_plasmons
+  from qeh import make_heterostructure, plot_plasmons
   layers = ['graphene+doping=0.1', 'BN+phonons']
   het = make_heterostructure(layers)
   output = het.get_plasmon_eigenmodes()
@@ -159,7 +159,7 @@ Which is equivalent to calling the CLI with::
 
   >> qeh graphene+doping=0.1 BN+phonons --plasmons --plot
 
-  
+
 .. [#interlayer] S. Latini, K.T. Winther, T. Olsen and K.S. Thygesen
    Interlayer Excitons and Band Alignment in MoS2/hBN/WSe2
    van der Waals Heterostructures
