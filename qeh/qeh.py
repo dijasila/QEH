@@ -269,6 +269,8 @@ class Heterostructure:
 
         # Grid stuff
         edgesize = 50
+        if self.substrate is not None: #F.N
+            edgesize += np.sum(self.d)/2.
         system_size = np.sum(self.d) + edgesize
         self.poisson_lim = 1000  # above this limit use potential model
         assert system_size < self.poisson_lim
@@ -276,6 +278,8 @@ class Heterostructure:
         self.z_lim = system_size
         self.dz = 0.05
         # master grid
+        if self.substrate is not None: #F.N
+            edgesize+=np.sum(self.d)
         self.z_big = np.arange(0, self.z_lim, self.dz) - edgesize / 2.
         self.z0 = np.append(np.array([0]), np.cumsum(self.d))
 
