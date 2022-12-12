@@ -1771,8 +1771,7 @@ def download_bb(target):
     import tarfile
     import urllib.request
     targz = str(target) + '.tar.gz'
-    url = ('https://cmr.fysik.dtu.dk/_downloads/'
-           'd128e774548fcf6629ba7ba2518002ba/chi-data-v2.tar.gz')
+    url = 'https://cmr.fysik.dtu.dk/_downloads/chi-data-v2.tar.gz'
     urllib.request.urlretrieve(url, targz)
     tar = tarfile.open(targz, "r:gz")
     tar.extractall(str(target.parent))
@@ -1826,7 +1825,7 @@ def main(args=None):
     Please see the provided examples in the bottom.
     """
 
-    parser.add_argument('layers', nargs='?', help=help, type=str)
+    parser.add_argument('layers', nargs='*', help=help, type=str)
     help = ("For above example: '6.2 3.2 6.2' gives thicknesses of "
             "6.2 3.2 and 6.2 AA to MoS2, graphene and WS2 "
             "respectively. If not set, the QEH module will use a "

@@ -1,10 +1,11 @@
 test:
-  image: python:3.6
+  image: python:3.11
   script:
     - pip install .
+    - qeh graphene+doping=0.5 3BN --plasmons --save-plots "_g-3BN"
 
 docs_test:
-  image: python:3.6
+  image: python:3.11
   script:
     - pip install .[docs]
     - which sphinx-build
