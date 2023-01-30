@@ -11,6 +11,16 @@ of 2D materials (heterostructures). This python package implements
 an easy command line interface to quickly calculate hetorostructure
 properties.
 
+.. seealso::
+
+  *Efficient Ab Initio Modeling of Dielectric Screening in 2D van der Waals
+  Materials: Including Phonons, Substrates, and Doping*
+
+  M. N. Gjerding*, L. S. R. Cavalcante, Andrey Chaves, and K. S. Thygesen
+
+  `J. Phys. Chem. C 2020, 124, 21, 11609–11616
+  <https://doi.org/10.1021/acs.jpcc.0c01635>`__
+
 Minimal example of calculating the plasmons of a graphene boron nitride
 heterostructure::
 
