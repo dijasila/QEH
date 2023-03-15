@@ -254,7 +254,7 @@ class Heterostructure:
         if self.n_layers > 1:
             # space around each layer
             if thicknesses is not None:
-                self.s = thicknesses / Bohr
+                self.s = np.asarray(thicknesses) / Bohr
             else:
                 self.s = (np.insert(self.d, 0, self.d[0]) +
                           np.append(self.d, self.d[-1])) / 2.
@@ -280,7 +280,7 @@ class Heterostructure:
         self.dz = 0.05
         # master grid
         self.z_big = np.arange(0, self.z_lim, self.dz)
-        self.z_big -= self.z_big[-1]/2.0
+        self.z_big -= self.z_big[-1] / 2.0
         self.z0 = np.append(np.array([0]), np.cumsum(self.d))
 
         # arange potential and density
