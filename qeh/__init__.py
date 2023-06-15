@@ -1,4 +1,4 @@
-__version__ = '22.12.0'
+__version__ = '23.6.0'
 name = "qeh"
 
 from qeh.qeh import (Heterostructure,  # noqa
