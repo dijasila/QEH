@@ -270,8 +270,7 @@ class Heterostructure:
         # Grid stuff
         edgesize = 50
         dsum = np.sum(self.d)
-        if self.substrate is not None:
-            edgesize += dsum
+        edgesize += dsum
         system_size = dsum + edgesize
         self.poisson_lim = 1000  # above this limit use potential model
         assert system_size < self.poisson_lim
