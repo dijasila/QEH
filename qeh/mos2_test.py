@@ -14,9 +14,6 @@ def test_mos2(tmp_path):
     os.chdir(tmp_path)
     chi = Path(qeh.__file__).parent / 'chi-data/H-MoS2-chi.npz'
     Path(chi.name).symlink_to(chi)
-    print(qeh.__file__, chi)
-    for p in Path(qeh.__file__).parent.glob('chi-data/*'):
-        print(p)
 
     # positions of maximum:
     q1 = 100000000
