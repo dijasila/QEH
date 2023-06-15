@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from qeh import Heterostructure
+import qeh
 
 
 def test_mos2(tmp_path):
@@ -11,10 +12,10 @@ def test_mos2(tmp_path):
     for 1 to 20 layers
     """
     os.chdir(tmp_path)
-    chi = Path(__file__).parent / 'chi-data/H-MoS2-chi.npz'
+    chi = Path(qeh.__file__).parent / 'chi-data/H-MoS2-chi.npz'
     Path(chi.name).symlink_to(chi)
-    print(__file__, chi)
-    for p in Path(__file__).parent.glob('chi-data/*'):
+    print(qeh.__file__, chi)
+    for p in Path(qeh.__file__).parent.glob('chi-data/*'):
         print(p)
 
     # positions of maximum:
