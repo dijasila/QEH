@@ -270,7 +270,8 @@ class Heterostructure:
         # Grid stuff
         edgesize = 50
         dsum = np.sum(self.d)
-        edgesize += dsum
+        if self.substrate is not None:
+            edgesize += dsum
         system_size = dsum + edgesize
         self.poisson_lim = 1000  # above this limit use potential model
         assert system_size < self.poisson_lim
@@ -279,7 +280,14 @@ class Heterostructure:
         self.dz = 0.05
         # master grid
         self.z_big = np.arange(0, self.z_lim, self.dz)
-        self.z_big -= self.z_big[-1] / 2.0
+        
+        # If substrate: have symmetric grid w r t 0
+        # else: grid starts at -edgesize/2
+        if self.substrate is None:
+            self.z_big -= edgesize / 2.0
+        else:   
+            self.z_big -= self.z_big[-1] / 2.0
+
         self.z0 = np.append(np.array([0]), np.cumsum(self.d))
 
         # arange potential and density
