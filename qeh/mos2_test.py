@@ -13,6 +13,9 @@ def test_mos2(tmp_path):
     os.chdir(tmp_path)
     chi = Path(__file__).parent / 'chi-data/H-MoS2-chi.npz'
     Path(chi.name).symlink_to(chi)
+    print(__file__, chi)
+    for p in Path(__file__).parent.glob('chi-data/*'):
+        print(p)
 
     # positions of maximum:
     q1 = 100000000
@@ -37,5 +40,6 @@ def test_mos2(tmp_path):
         q1 = q2
         e1 = e2
 
+    # "Bulk" values:
     assert q1 == pytest.approx(0.118, abs=0.001)
     assert e1 == pytest.approx(12.34, abs=0.01)
