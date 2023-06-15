@@ -4,7 +4,7 @@ test:
     - pip install pytest
     - pip install .
     - qeh graphene+doping=0.5 3BN --plasmons --save-plots "_g-3BN"
-    - pytest
+    - pytest --pyargs qeh
 
 docs_test:
   image: python:3.11
