@@ -573,7 +573,7 @@ class Heterostructure:
         eye = np.eye(self.dim)
         nq = len(q_abs)
         for iq in range(nq):
-            if (1 + iq) % (nq // 10) == 0:
+            if nq >= 10 and (1 + iq) % (nq // 10) == 0:
                 print('{}%'.format(np.round((1 + iq) / nq, 1) * 100))
 
             kernel_ij = self.kernel_qij[iq].copy()
