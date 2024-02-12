@@ -638,8 +638,8 @@ class Heterostructure:
                 if include_off_diagonal:
                     for j in range(self.n_layers):
                         # XXX define chi_md, chi_dm...
-                        chi_intra_wij[iw][2*j, 2*j + 1] = chi_md_iqw[j, iq, iw]
-                        chi_intra_wij[iw][2*j + 1, 2*j] = chi_dm_iqw[j, iq, iw]
+                        chi_intra_wij[iw][2*j, 2*j + 1] = chi_md_iqw[self.layer_indices[j], iq, iw]
+                        chi_intra_wij[iw][2*j + 1, 2*j] = chi_dm_iqw[self.layer_indices[j], iq, iw]
                 
                 if self.substrate is not None:
                     kernelsub_ij = self.kernelsub_qwij[iq, iw].copy()
