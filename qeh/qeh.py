@@ -178,6 +178,8 @@ class Heterostructure:
             self.chi_dipole = None
             drho_dipole = None
         if include_off_diagonal:
+            assert include_dipole, 'You must include_dipole must be True if'
+                                   ' include_off_diagonal is True'
             chi_dm = []
             chi_md = []
         self.include_off_diagonal = include_off_diagonal
@@ -612,7 +614,7 @@ class Heterostructure:
             # when solving dyson
             np.fill_diagonal(kernel_ij, 0)
 
-            if self.chi_dipole:
+            if self.chi_dipole is not None:
                 # F.N Removes self-interaction term for off-diagonal
                 # components. This should also be set to zero when
                 # using off diagonal building blocks...
