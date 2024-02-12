@@ -127,7 +127,7 @@ class Heterostructure:
         and related physical quantities."""
 
     def __init__(self, structure, d, thicknesses=None,
-                 include_dipole=True, d0=None,
+                 include_dipole=True, include_off_diagonal=True, d0=None,
                  wmax=10, qmax=None, timer=None, substrate=None):
         """Creates a Heterostructure object.
 
@@ -148,6 +148,8 @@ class Heterostructure:
             measure.
         include_dipole: Bool
             Includes dipole contribution if True
+        include_off_diagonal: Bool
+            include off-diagonal components of intralayer chi if true
         wmax: float
             Cutoff for frequency grid (eV)
         qmax: float
@@ -201,6 +203,14 @@ class Heterostructure:
                 zi -= np.mean(zi)
                 chim = data['chiM_qw']
                 chid = data['chiD_qw']
+                try:  ##
+                    chimd = data['chiMD_qw']
+                    chidm = data['chiDM_qw']
+                    #check whether they are all zero, implement bool
+                    # check for all bbs
+                except:
+                    pass
+
                 drhom = data['drhoM_qz']
                 drhod = data['drhoD_qz']
                 if qmax is not None:
@@ -216,6 +226,8 @@ class Heterostructure:
                 if include_dipole:
                     chi_dipole.append(np.array(chid[:qindex, :windex]))
                     drho_dipole.append(np.array(drhod[:qindex]))
+                if include_off_diagonal:
+
                 self.z.append(np.array(zi))
                 n -= n_rep
             else:
