@@ -275,6 +275,7 @@ class Heterostructure:
             self.s = [d0 / Bohr]  # Width of single layer
         self.d0 = d0 / Bohr
 
+        # F.N. Dimension is doubled if dipole is included.
         self.dim = np.copy(self.n_layers)
         if include_dipole:
             self.dim *= 2
@@ -591,7 +592,14 @@ class Heterostructure:
             kernel_ij = self.kernel_qij[iq].copy()
             np.fill_diagonal(kernel_ij, 0)  # Diagonal is set to zero
 
-            if self.chi_dipole is not None:
+            if self.chi_dipole is not None and not include_off_diagonal:
+                # F.N Here the off diagonal components of the intralayer Kernel
+                # are set to zero. Should only be done if chi-matrix is diagonal
+                # Composite index definition even i monopole i+1 dipole comp
+                # of layer i/2.
+                # self.dim is doubled if dipole is inlcuded
+                # probably easiest to only inlcude off diagonal compojnents
+                # if dipole is inlcuded to get dimensions right
                 for j in range(self.n_layers):
                     kernel_ij[2 * j, 2 * j + 1] = 0
                     kernel_ij[2 * j + 1, 2 * j] = 0
@@ -605,8 +613,18 @@ class Heterostructure:
                     chi_intra_i = np.insert(chi_intra_i, np.arange(Nls) + 1,
                                             chi_d_iqw[self.layer_indices,
                                                       iq, iw])
+                #F.N Should be sufficient to include off-diagonal components here
+                # rest seems general...
                 chi_intra_wij[iw] = np.diag(chi_intra_i)
 
+                # F.N. Let's start with some ugly code that is easily understandable
+                # Add off diagonal components:
+                if include_off_diagonal:
+                    for j in range(self.n_layers):
+                        # XXX define chi_md, chi_dm...
+                        chi_intra_wij[iw][2*j, 2*j + 1] = chi_md_iqw[j, iq, iw]
+                        chi_intra_wij[iw][2*j, 2*j + 1] = chi_dm_iqw[j, iq, iw]
+                
                 if self.substrate is not None:
                     kernelsub_ij = self.kernelsub_qwij[iq, iw].copy()
                     newkernel_ij = kernel_ij + kernelsub_ij
