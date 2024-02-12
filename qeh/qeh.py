@@ -591,10 +591,6 @@ class Heterostructure:
         if self.include_off_diagonal:
             chi_md_iqw = self.chi_md
             chi_dm_iqw = self.chi_dm
-        print('chi_m_iqw shape: ', chi_m_iqw.shape)
-        print('chi_d_iqw shape: ', chi_d_iqw.shape)
-        print('chi_md_iqw shape: ', chi_md_iqw.shape)
-        print('chi_dm_iqw shape: ', chi_dm_iqw.shape)
 
         if self.kernel_qij is None:
             self.kernel_qij = self.get_Coulomb_Kernel()
