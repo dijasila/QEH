@@ -178,7 +178,7 @@ class Heterostructure:
             self.chi_dipole = None
             drho_dipole = None
         if include_off_diagonal:
-            assert include_dipole, 'You must include_dipole must be True if'
+            assert include_dipole, 'You must include_dipole must be True if' \
                                    ' include_off_diagonal is True'
             chi_dm = []
             chi_md = []
