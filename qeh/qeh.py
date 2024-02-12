@@ -177,6 +177,10 @@ class Heterostructure:
         else:
             self.chi_dipole = None
             drho_dipole = None
+        if include_off_diagonal:
+            chi_dm = []
+            chi_md = []
+        self.include_off_diagonal = include_off_diagonal
         self.z = []
         layer_indices = []
         self.n_layers = 0
@@ -203,14 +207,15 @@ class Heterostructure:
                 zi -= np.mean(zi)
                 chim = data['chiM_qw']
                 chid = data['chiD_qw']
-                try:  ##
-                    chimd = data['chiMD_qw']
-                    chidm = data['chiDM_qw']
-                    #check whether they are all zero, implement bool
-                    # check for all bbs
-                except:
-                    pass
-
+                if include_off_diagonal:
+                    if 'chiDM_qw' in data:
+                        chidm = data['chiDM_qw']
+                    else:
+                        chidm = np.zeros(chim.shape)
+                    if 'chiMD_qw' in data:
+                        chimd = data['chiMD_qw']
+                    else:
+                        chimd = np.zeros(chim.shape)
                 drhom = data['drhoM_qz']
                 drhod = data['drhoD_qz']
                 if qmax is not None:
@@ -227,6 +232,8 @@ class Heterostructure:
                     chi_dipole.append(np.array(chid[:qindex, :windex]))
                     drho_dipole.append(np.array(drhod[:qindex]))
                 if include_off_diagonal:
+                    chi_dm.append(np.array(chidm[:qindex, :windex]))
+                    chi_md.append(np.array(chimd[:qindex, :windex]))
 
                 self.z.append(np.array(zi))
                 n -= n_rep
@@ -257,6 +264,9 @@ class Heterostructure:
 
         chi_monopole = np.array(chi_monopole)[:, self.q1: self.q2]
         chi_dipole = np.array(chi_dipole)[:, self.q1: self.q2]
+        if include_off_diagonal:
+            chi_dm = np.array(chi_dm)[:, self.q1: self.q2]
+            chi_md = np.array(chi_md)[:, self.q1: self.q2]
         for i in range(self.n_types):
             drho_monopole[i] = np.array(drho_monopole[i])[self.q1: self.q2]
             drho_dipole[i] = np.array(drho_dipole[i])[self.q1: self.q2]
@@ -276,8 +286,9 @@ class Heterostructure:
         self.d0 = d0 / Bohr
 
         # F.N. Dimension is doubled if dipole is included.
+        # J.S. also if off-diagonal is included, regardless of dipole, I think
         self.dim = np.copy(self.n_layers)
-        if include_dipole:
+        if include_dipole:  # J.S. or include_off_diagonal
             self.dim *= 2
 
         # Grid stuff
@@ -307,6 +318,9 @@ class Heterostructure:
         self.chi_monopole = chi_monopole
         if include_dipole:
             self.chi_dipole = chi_dipole
+        if include_off_diagonal:
+            self.chi_md = chi_md
+            self.chi_dm = chi_dm
         self.drho_monopole, self.drho_dipole, self.basis_array, \
             self.drho_array = self.arange_basis(drho_monopole, drho_dipole)
 
@@ -572,7 +586,9 @@ class Heterostructure:
         q_abs = self.myq_abs
         chi_m_iqw = self.chi_monopole
         chi_d_iqw = self.chi_dipole
-
+        if self.include_off_diagonal:
+            chi_md_iqw = self.chi_md
+            chi_dm_iqw = self.chi_dm
         if self.kernel_qij is None:
             self.kernel_qij = self.get_Coulomb_Kernel()
 
