@@ -361,6 +361,8 @@ class Heterostructure:
 
         return drhom, drhod, basis_array, drho_array
 
+    # F.N XXX Does this function also need to be generalized to include
+    # off diagonal components? I think not...
     @timer('Get induced potentials')
     def get_induced_potentials(self):
         from scipy.interpolate import interp1d
@@ -590,16 +592,14 @@ class Heterostructure:
                 print('{}%'.format(np.round((1 + iq) / nq, 1) * 100))
 
             kernel_ij = self.kernel_qij[iq].copy()
-            np.fill_diagonal(kernel_ij, 0)  # Diagonal is set to zero
+            # Diagonal is set to zero to remove self-ibteraction
+            # when solving dyson
+            np.fill_diagonal(kernel_ij, 0)
 
-            if self.chi_dipole is not None and not include_off_diagonal:
-                # F.N Here the off diagonal components of the intralayer Kernel
-                # are set to zero. Should only be done if chi-matrix is diagonal
-                # Composite index definition even i monopole i+1 dipole comp
-                # of layer i/2.
-                # self.dim is doubled if dipole is inlcuded
-                # probably easiest to only inlcude off diagonal compojnents
-                # if dipole is inlcuded to get dimensions right
+            if self.chi_dipole:
+                # F.N Removes self-interaction term for off-diagonal
+                # components. This should also be set to zero when
+                # using off diagonal building blocks...
                 for j in range(self.n_layers):
                     kernel_ij[2 * j, 2 * j + 1] = 0
                     kernel_ij[2 * j + 1, 2 * j] = 0
