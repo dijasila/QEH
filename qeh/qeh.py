@@ -591,10 +591,6 @@ class Heterostructure:
         if self.include_off_diagonal:
             chi_md_iqw = self.chi_md
             chi_dm_iqw = self.chi_dm
-        print('chi_m_iqw shape: ', chi_m_iqw.shape)
-        print('chi_d_iqw shape: ', chi_d_iqw.shape)
-        print('chi_md_iqw shape: ', chi_md_iqw.shape)
-        print('chi_dm_iqw shape: ', chi_dm_iqw.shape)
 
         if self.kernel_qij is None:
             self.kernel_qij = self.get_Coulomb_Kernel()
@@ -1419,6 +1415,7 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
     q_max = 1000
     w_max = 1000
     for name in BBfiles:
+        print(name)
         data = np.load(open(name, 'rb'))
         q_abs = data['q_abs']
         q_max = np.min([q_abs[-1], q_max])
@@ -1506,7 +1503,7 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
         if np.all(chiMD_qw == 0.0):
             chiMD_qw = np.zeros((len(q_grid), len(w_grid)))
         else:
-            chiMD_qw = complex_spline(chiDM_qw, q_abs, w, q_grid, w_grid)
+            chiMD_qw = complex_spline(chiMD_qw, q_abs, w, q_grid, w_grid)
 
         # drho monopole
 
