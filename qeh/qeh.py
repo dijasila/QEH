@@ -178,6 +178,8 @@ class Heterostructure:
             self.chi_dipole = None
             drho_dipole = None
         if include_off_diagonal:
+            assert include_dipole, 'You must include_dipole must be True if' \
+                                   ' include_off_diagonal is True'
             chi_dm = []
             chi_md = []
         self.include_off_diagonal = include_off_diagonal
@@ -589,6 +591,11 @@ class Heterostructure:
         if self.include_off_diagonal:
             chi_md_iqw = self.chi_md
             chi_dm_iqw = self.chi_dm
+        print('chi_m_iqw shape: ', chi_m_iqw.shape)
+        print('chi_d_iqw shape: ', chi_d_iqw.shape)
+        print('chi_md_iqw shape: ', chi_md_iqw.shape)
+        print('chi_dm_iqw shape: ', chi_dm_iqw.shape)
+
         if self.kernel_qij is None:
             self.kernel_qij = self.get_Coulomb_Kernel()
 
@@ -612,7 +619,7 @@ class Heterostructure:
             # when solving dyson
             np.fill_diagonal(kernel_ij, 0)
 
-            if self.chi_dipole:
+            if self.chi_dipole is not None:
                 # F.N Removes self-interaction term for off-diagonal
                 # components. This should also be set to zero when
                 # using off diagonal building blocks...
@@ -635,7 +642,7 @@ class Heterostructure:
 
                 # F.N. Let's start with some ugly code that is easily understandable
                 # Add off diagonal components:
-                if include_off_diagonal:
+                if self.include_off_diagonal:
                     for j in range(self.n_layers):
                         # XXX define chi_md, chi_dm...
                         chi_intra_wij[iw][2*j, 2*j + 1] = chi_md_iqw[self.layer_indices[j], iq, iw]
