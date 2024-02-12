@@ -647,7 +647,7 @@ class Heterostructure:
                         # XXX define chi_md, chi_dm...
                         chi_intra_wij[iw][2*j, 2*j + 1] = chi_md_iqw[self.layer_indices[j], iq, iw]
                         chi_intra_wij[iw][2*j + 1, 2*j] = chi_dm_iqw[self.layer_indices[j], iq, iw]
-                
+
                 if self.substrate is not None:
                     kernelsub_ij = self.kernelsub_qwij[iq, iw].copy()
                     newkernel_ij = kernel_ij + kernelsub_ij
@@ -1395,6 +1395,17 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
 
     from scipy.interpolate import RectBivariateSpline, interp1d
 
+    def spline(array, x_in, y_in, x_out, y_out):
+        # interpolates a function from the regular grid (x_in, y_in)
+        # to (x_out, y_out)
+        # The shape of 'array' must be (len(x_in), len(y_in)).
+        interpolator = RectBivariateSpline(x_in, y_in, array, s=0)
+        return interpolator(x_out, y_out)
+
+    def complex_spline(array, x_in, y_in, x_out, y_out):
+        return spline(array.real, x_in, y_in, x_out, y_out)\
+                     + 1j * spline(array.imag, x_in, y_in, x_out, y_out)
+
     if BBmotherfile is not None:
         BBfiles.append(BBmotherfile)
 
@@ -1441,6 +1452,14 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
         chiD_qw = data['chiD_qw']
         drhoM_qz = data['drhoM_qz']
         drhoD_qz = data['drhoD_qz']
+        if 'chiDM_qw' in data:
+            chiDM_qw = data['chiDM_qw']
+        else:
+            chiDM_qw = np.zeros(chiM_qw.shape)
+        if 'chiMD_qw' in data:
+            chiMD_qw = data['chiMD_qw']
+        else:
+            chiMD_qw = np.zeros(chiM_qw.shape)
 
         # chi monopole
         omit_q0 = False
@@ -1478,6 +1497,17 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
 
         chiD_qw = yr(q_grid, w_grid) + 1j * yi(q_grid, w_grid)
 
+        # off-diagonal chi
+
+        if np.all(chiDM_qw == 0.0):
+            chiDM_qw = np.zeros((len(q_grid), len(w_grid)))
+        else:
+            chiDM_qw = complex_spline(chiDM_qw, q_abs, w, q_grid, w_grid)
+        if np.all(chiMD_qw == 0.0):
+            chiMD_qw = np.zeros((len(q_grid), len(w_grid)))
+        else:
+            chiMD_qw = complex_spline(chiDM_qw, q_abs, w, q_grid, w_grid)
+
         # drho monopole
 
         yr = RectBivariateSpline(q_abs, z,
@@ -1502,6 +1532,8 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
                 'omega_w': omega_w,
                 'chiM_qw': chiM_qw,
                 'chiD_qw': chiD_qw,
+                'chiMD_qw': chiMD_qw,
+                'chiDM_qw': chiDM_qw,
                 'z': z,
                 'drhoM_qz': drhoM_qz,
                 'drhoD_qz': drhoD_qz,
