@@ -637,7 +637,7 @@ class Heterostructure:
 
                 # F.N. Let's start with some ugly code that is easily understandable
                 # Add off diagonal components:
-                if include_off_diagonal:
+                if self.include_off_diagonal:
                     for j in range(self.n_layers):
                         # XXX define chi_md, chi_dm...
                         chi_intra_wij[iw][2*j, 2*j + 1] = chi_md_iqw[j, iq, iw]
