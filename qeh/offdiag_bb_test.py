@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 import os
 from pathlib import Path
 import qeh
+from ase.units import Bohr
 
 def dielectric(calc, domega, omega2, rate=0.0):
     diel = DielectricFunction(calc=calc,
@@ -19,7 +20,8 @@ def dielectric(calc, domega, omega2, rate=0.0):
                               nblocks=1,
                               ecut=10,
                               rate=rate,
-                              truncation='2D')
+                              truncation='2D',
+                              txt='df.txt')
     return diel
 
 def IBiTe_gs():
@@ -42,9 +44,17 @@ def IBiTe_gs():
     IBiTe.calc = calc
     IBiTe.get_potential_energy()
     calc.write('IBITe.gpw', mode='all')
-    return
+    q_cs = np.array([[0, 0, 0], [1/6, 0, 0], [2/6, 0, 0], [3/6, 0, 0]])
+    rcell_cv = 2 * np.pi * np.linalg.inv(calc.wfs.gd.cell_cv).T
+    q_vs = np.dot(q_cs, rcell_cv)
+    q_abs=[np.linalg.norm(q_v)/Bohr for q_v in q_vs]
+    return q_cs, q_abs
 
 def make_HS(structure, off_diag):
+    # XXX Monolayer results are very sensitive to d0
+    # GPAW results are retained if d0 is chosen as
+    # lattice constant in z-direction.
+    # investigate the reason for this...
     d = [7]
     # Including off-diagonal elements (True by default)
     HS = Heterostructure(
@@ -54,7 +64,7 @@ def make_HS(structure, off_diag):
         include_off_diagonal = off_diag,
         wmax=0,  # only include w=0
         qmax=1,  # q grid up to 1 Ang^{-1}
-        d0=7)  # width of single layer
+        d0=19.5)  # width of single layer
     return HS
     
 def test_off_diagonal_chi(tmp_path):
@@ -64,11 +74,36 @@ def test_off_diagonal_chi(tmp_path):
     chi = Path(qeh.__file__).parent / 'chi-data/H-MoS2-chi.npz'
     Path(chi.name).symlink_to(chi)
 
-    IBiTe_gs()
+    q_cs, q_abs = IBiTe_gs()
     df = dielectric('IBiTe.gpw', 0.1, 0.5)
     bb = BuildingBlock('IBiTe', df)
     bb.calculate_building_block()
 
+    # Compare monolayer with gpaw
+    monolayer = make_HS(['IBiTe'], False)
+    q, w, epsM_mono = monolayer.get_macroscopic_dielectric_function()
+
+    epsM_gpaw = []
+    tested_qs = 0
+    for iq, q_c in enumerate(q_cs):
+        _, epsM_q = df.get_dielectric_function(q_c = q_c)
+        epsM_gpaw.append(epsM_q[0])
+        for iq2 in range(len(q)):
+            if np.isclose(q[iq2], q_abs[iq], atol=5e-5):
+                assert np.isclose(epsM_q[0], epsM_mono[iq2], atol=0.03)
+                tested_qs += 1
+    assert tested_qs == 3
+    if True:
+        # XXX possibility to plot, remove when satisfied...
+        epsM_gpaw = np.array(epsM_gpaw)
+        plt.plot(q, epsM_mono.real, '-*', label='qeh real')
+        plt.plot(q, epsM_mono.imag, '-*', label='qeh imag')
+        plt.plot(q_abs, epsM_gpaw.real, '-+', label='gpaw real')
+        plt.plot(q_abs, epsM_gpaw.imag, '-+', label='gpaw imag')
+        plt.legend()
+        plt.title('Macroscopic dielectric function')
+        plt.show()
+    
     # Including off-diag bb
     HS = make_HS(['2IBiTe'], True)
     q, w, epsM = HS.get_macroscopic_dielectric_function()
