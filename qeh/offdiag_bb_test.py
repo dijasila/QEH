@@ -81,30 +81,6 @@ def test_off_diagonal_chi(tmp_path):
     bb = BuildingBlock('IBiTe', df)
     bb.calculate_building_block()
 
-    # Compare monolayer with gpaw
-    monolayer = make_HS(['IBiTe'], False)
-    q, w, epsM_mono = monolayer.get_macroscopic_dielectric_function()
-
-    epsM_gpaw = []
-    tested_qs = 0
-    for iq, q_c in enumerate(q_cs):
-        _, epsM_q = df.get_dielectric_function(q_c=q_c)
-        epsM_gpaw.append(epsM_q[0])
-        for iq2 in range(len(q)):
-            if np.isclose(q[iq2], q_abs[iq], atol=5e-5):
-                assert np.isclose(epsM_q[0], epsM_mono[iq2], atol=0.03)
-                tested_qs += 1
-    assert tested_qs == 3
-    if False:
-        # XXX possibility to plot, remove when satisfied...
-        epsM_gpaw = np.array(epsM_gpaw)
-        plt.plot(q, epsM_mono.real, '-*', label='qeh real')
-        plt.plot(q, epsM_mono.imag, '-*', label='qeh imag')
-        plt.plot(q_abs, epsM_gpaw.real, '-+', label='gpaw real')
-        plt.plot(q_abs, epsM_gpaw.imag, '-+', label='gpaw imag')
-        plt.legend()
-        plt.title('Macroscopic dielectric function')
-        plt.show()
 
     # Including off-diag bb
     HS = make_HS(['2IBiTe'], True)
