@@ -1,8 +1,6 @@
-import pytest
 import numpy as np
 from gpaw.response.df import DielectricFunction
-from gpaw.response.qeh import BuildingBlock, check_building_blocks
-from gpaw.mpi import world, size
+from gpaw.response.qeh import BuildingBlock
 from gpaw import GPAW, PW, FermiDirac
 from qeh import Heterostructure, interpolate_building_blocks
 from matplotlib import pyplot as plt
@@ -10,6 +8,7 @@ import os
 from pathlib import Path
 import qeh
 from ase.units import Bohr
+
 
 def dielectric(calc, domega, omega2, rate=0.0):
     diel = DielectricFunction(calc=calc,
@@ -23,6 +22,7 @@ def dielectric(calc, domega, omega2, rate=0.0):
                               truncation='2D',
                               txt='df.txt')
     return diel
+
 
 def IBiTe_gs():
     # janus material. material parameters obtained from c2db.
@@ -47,8 +47,9 @@ def IBiTe_gs():
     q_cs = np.array([[0, 0, 0], [1/6, 0, 0], [2/6, 0, 0], [3/6, 0, 0]])
     rcell_cv = 2 * np.pi * np.linalg.inv(calc.wfs.gd.cell_cv).T
     q_vs = np.dot(q_cs, rcell_cv)
-    q_abs=[np.linalg.norm(q_v)/Bohr for q_v in q_vs]
+    q_abs=[np.linalg.norm(q_v) / Bohr for q_v in q_vs]
     return q_cs, q_abs
+
 
 def make_HS(structure, off_diag):
     # XXX Monolayer results are very sensitive to d0
@@ -61,12 +62,13 @@ def make_HS(structure, off_diag):
         structure=structure,  # set up structure
         d=d,  # layer distance array
         include_dipole=True,
-        include_off_diagonal = off_diag,
+        include_off_diagonal=off_diag,
         wmax=0,  # only include w=0
         qmax=1,  # q grid up to 1 Ang^{-1}
         d0=19.5)  # width of single layer
     return HS
-    
+
+
 def test_off_diagonal_chi(tmp_path):
     # Calculating gs and buildingblock
     # XXX Move to fixture as we create more tests
@@ -86,14 +88,14 @@ def test_off_diagonal_chi(tmp_path):
     epsM_gpaw = []
     tested_qs = 0
     for iq, q_c in enumerate(q_cs):
-        _, epsM_q = df.get_dielectric_function(q_c = q_c)
+        _, epsM_q = df.get_dielectric_function(q_c=q_c)
         epsM_gpaw.append(epsM_q[0])
         for iq2 in range(len(q)):
             if np.isclose(q[iq2], q_abs[iq], atol=5e-5):
                 assert np.isclose(epsM_q[0], epsM_mono[iq2], atol=0.03)
                 tested_qs += 1
     assert tested_qs == 3
-    if True:
+    if False:
         # XXX possibility to plot, remove when satisfied...
         epsM_gpaw = np.array(epsM_gpaw)
         plt.plot(q, epsM_mono.real, '-*', label='qeh real')
@@ -103,7 +105,7 @@ def test_off_diagonal_chi(tmp_path):
         plt.legend()
         plt.title('Macroscopic dielectric function')
         plt.show()
-    
+
     # Including off-diag bb
     HS = make_HS(['2IBiTe'], True)
     q, w, epsM = HS.get_macroscopic_dielectric_function()
@@ -121,25 +123,24 @@ def test_off_diagonal_chi(tmp_path):
     # XXX It does not seem correct to have imaginary parts here?
     # However, this is the case also when off_diag = False, so
     # maybe it is the building block which is wrong?
-    
-    expected_epsM = [[ 1.00134782-2.86604242e-06j],
-                     [ 1.92047859-4.27676734e-03j],
-                     [ 2.79431902-1.17221028e-02j],
-                     [ 3.71008573-2.00242298e-02j],
-                     [ 4.75955272-2.49296881e-02j],
-                     [ 6.06830419-1.72620056e-02j],
-                     [ 7.84803204+2.52031425e-02j],
-                     [10.52641274+1.65458907e-01j],
-                     [15.16435212+6.30124718e-01j],
-                     [25.34195424+2.65514592e+00j],
-                     [ 5.401448  +4.28917276e-02j],
-                     [ 2.27880957+4.93372479e-02j]]
+    expected_epsM = [[1.00134782 - 2.86604242e-06j],
+                     [1.92047859 - 4.27676734e-03j],
+                     [2.79431902 - 1.17221028e-02j],
+                     [3.71008573 - 2.00242298e-02j],
+                     [4.75955272 - 2.49296881e-02j],
+                     [6.06830419 - 1.72620056e-02j],
+                     [7.84803204 + 2.52031425e-02j],
+                     [10.52641274 + 1.65458907e-01j],
+                     [15.16435212 + 6.30124718e-01j],
+                     [25.34195424 + 2.65514592e+00j],
+                     [5.401448 + 4.28917276e-02j],
+                     [2.27880957 + 4.93372479e-02j]]
     assert np.allclose(epsM, expected_epsM, atol=1e-4)
-
 
     # Test combination Janus + non Janus material
     # dielectric function should depend on stacking
-    interpolate_building_blocks(BBfiles=['IBiTe', 'H-MoS2'], BBmotherfile='H-MoS2')
+    interpolate_building_blocks(BBfiles=['IBiTe', 'H-MoS2'],
+                                BBmotherfile='H-MoS2')
 
     HS3 = make_HS(['IBITe_int', 'H-MoS2_int'], False)
     q3, w3, epsM3 = HS3.get_macroscopic_dielectric_function()
