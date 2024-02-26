@@ -178,7 +178,7 @@ class Heterostructure:
             self.chi_dipole = None
             drho_dipole = None
         if include_off_diagonal:
-            assert include_dipole, 'You must include_dipole must be True if' \
+            assert include_dipole, 'include_dipole must be True if' \
                                    ' include_off_diagonal is True'
             chi_dm = []
             chi_md = []
@@ -331,6 +331,11 @@ class Heterostructure:
 
         if self.substrate is not None:
             self.kernelsub_qwij = None
+
+        # In case of off-diagonal components mixed basis is not
+        # orthonormal. Here we get the inverse overlap matrix
+        # which is needed for completeness relation
+        self.g_qij = self.get_g_qij()
 
     @timer('Arange basis')
     def arange_basis(self, drhom, drhod=None):
@@ -1346,7 +1351,21 @@ class Heterostructure:
         nq = len(self.q_abs)
         return A_qw[:nq]
 
-
+    # F.N Added function to get metric
+    def get_g_qij(self):
+        g_qij = []
+        for iq in range(self.mynq):
+            g_qij.append(np.eye(self.dim))
+        if not self.include_off_diagonal:
+            return g_qij
+        # if include_off_diagonal add off-diag components of
+        # metric ( g^{-1} )_{i,j} = chibar_{ij} / chibar_{ii}
+        for iq in range(self.mynq):
+            for j in range(self.n_layers):
+                g_qij[iq][2*j, 2*j + 1] = self.chi_md[self.layer_indices[j], iq, 0] / self.chi_monopole[self.layer_indices[j], iq, 0]
+                g_qij[iq][2*j +1, 2*j] = self.chi_dm[self.layer_indices[j], iq, 0] / self.chi_dipole[self.layer_indices[j], iq, 0]
+            g_qij[iq] = np.linalg.inv(g_qij[iq])
+        return g_qij
 """TOOLS"""
 
 
