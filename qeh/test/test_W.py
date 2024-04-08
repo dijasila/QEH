@@ -1,26 +1,12 @@
-from qeh import interpolate_building_blocks
-from qeh import Heterostructure
 import numpy as np
+from conftest import make_bilayer
 
 
 def test_W(testdir):
     """Calculate W(q)
     """
 
-    # Interpolate to same grid
-    interpolate_building_blocks(BBfiles=['H-WS2'], BBmotherfile='H-MoS2')
-
-    thick_MoS2 = 6.2926
-    thick_WS2 = 6.718
-
-    d_MoS2_WS2 = (thick_MoS2 + thick_WS2) / 2
-
-    HS = Heterostructure(structure=['H-MoS2_int', 'H-WS2_int'],
-                         d=[d_MoS2_WS2],
-                         qmax=None,
-                         wmax=0,
-                         d0=thick_WS2)
-
+    HS = make_bilayer('H-MoS2', 'H-WS2')
     hl_array = np.array([1., 0., 0, 0.])
     el_array = np.array([1., 0., 0., 0.])
 
