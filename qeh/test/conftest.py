@@ -31,7 +31,8 @@ def testdir(tmp_path):
         os.chdir(cwd)
         print('tmp_path:', tmp_path)
 
-def make_bilayer(matA, matB, thick_A=6.2926, thick_B=6.718):
+
+def make_bilayer(matA, matB, thick_A=6.2926, thick_B=6.718, wmax=0):
     # Interpolate to same grid
     interpolate_building_blocks(BBfiles=[matA], BBmotherfile=matB)
     d = (thick_A + thick_B) / 2
@@ -39,7 +40,6 @@ def make_bilayer(matA, matB, thick_A=6.2926, thick_B=6.718):
     HS = Heterostructure(structure=[matA+'_int', matB+'_int'],
                          d=[d],
                          qmax=None,
-                         wmax=0,
+                         wmax=wmax,
                          d0=thick_A)
     return HS
-

@@ -13,5 +13,4 @@ def test_exciton_BE(testdir):
     ee, ev = HS.get_exciton_binding_energies(eff_mass=inter_mass,
                                              e_distr=el_array,
                                              h_distr=hl_array)
-    
     assert np.allclose(-ee[0], 0.28068, atol=1e-4)
