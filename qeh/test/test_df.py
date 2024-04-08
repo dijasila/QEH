@@ -7,7 +7,7 @@ from qeh import Heterostructure
 import qeh
 
 
-def test_mos2(tmp_path):
+def test_df_mos2(tmp_path):
     """Calculate static dielectric function for multilayer MoS2
     for 1 to 20 layers
     """
