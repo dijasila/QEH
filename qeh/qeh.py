@@ -335,7 +335,7 @@ class Heterostructure:
         # In case of off-diagonal components mixed basis is not
         # orthonormal. Here we get the inverse overlap matrix
         # which is needed for completeness relation
-        self.g_qij = self.get_g_qij()
+        self.g_qij, self.gdag_qij = self.get_g_qij()
 
     @timer('Arange basis')
     def arange_basis(self, drhom, drhod=None):
@@ -1353,11 +1353,19 @@ class Heterostructure:
 
     # F.N Added function to get metric
     def get_g_qij(self):
+        """ Returns left and right metric, g, gdag
+        Defined by completeness relations:
+        1 = \sum_{a,b} |rho_ia (q)> g^i_{ab}(q) <phi_ib| =
+          = \sum_{a,b} |phi_ia> (gdag)^i_{ab}(q) <rho_ib (q)|
+        where gdag is the hermitian conjugate of g and g is
+        calculated from (g^-1)^i_ab = <phi_ia|rho_ib(q)> = chibar_iab(q)/chibar_iaa(q)
+        """
         g_qij = []
+        gdag_qij = []
         for iq in range(self.mynq):
             g_qij.append(np.eye(self.dim))
         if not self.include_off_diagonal:
-            return g_qij
+            return g_qij, g_qijn
         # if include_off_diagonal add off-diag components of
         # metric ( g^{-1} )_{i,j} = chibar_{ij} / chibar_{ii}
         for iq in range(self.mynq):
@@ -1365,7 +1373,19 @@ class Heterostructure:
                 g_qij[iq][2*j, 2*j + 1] = self.chi_md[self.layer_indices[j], iq, 0] / self.chi_monopole[self.layer_indices[j], iq, 0]
                 g_qij[iq][2*j +1, 2*j] = self.chi_dm[self.layer_indices[j], iq, 0] / self.chi_dipole[self.layer_indices[j], iq, 0]
             g_qij[iq] = np.linalg.inv(g_qij[iq])
-        return g_qij
+            gdag_qij.append(g_qij[iq].conj().T) 
+        return g_qij, gdag_qij
+
+    def multiply_AgB(A, B, g):
+        """ Multiplies matrices A and B
+        including metric g if off diagonal building
+        blocks are included
+        """
+        if self.include_off_diagonal:
+            return A@g@B
+        else return A@B
+
+
 """TOOLS"""
 
 
