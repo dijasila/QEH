@@ -11,15 +11,15 @@ def test_W(testdir):
     interpolate_building_blocks(BBfiles=['H-WS2'], BBmotherfile='H-MoS2')
 
     thick_MoS2 = 6.2926
-    thick_WSe2 = 6.718
+    thick_WS2 = 6.718
 
-    d_MoS2_WSe2 = (thick_MoS2 + thick_WSe2) / 2
+    d_MoS2_WS2 = (thick_MoS2 + thick_WS2) / 2
 
     HS = Heterostructure(structure=['H-MoS2_int', 'H-WS2_int'],
-                         d=[d_MoS2_WSe2],
+                         d=[d_MoS2_WS2],
                          qmax=None,
                          wmax=0,
-                         d0=thick_WSe2)
+                         d0=thick_WS2)
 
     hl_array = np.array([1., 0., 0, 0.])
     el_array = np.array([1., 0., 0., 0.])
