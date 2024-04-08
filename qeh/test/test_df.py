@@ -9,9 +9,6 @@ def test_df_mos2(testdir):
     """Calculate static dielectric function for multilayer MoS2
     for 1 to 20 layers
     """
-    chi = Path(qeh.__file__).parent / 'chi-data/H-MoS2-chi.npz'
-    Path(chi.name).symlink_to(chi)
-
     # positions of maximum:
     q1 = 100000000
     e1 = 0.0
