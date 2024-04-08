@@ -1,8 +1,5 @@
-from pathlib import Path
 import pytest
-
 from qeh import Heterostructure
-import qeh
 
 
 def test_df_mos2(testdir):

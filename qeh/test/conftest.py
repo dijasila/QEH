@@ -16,7 +16,7 @@ def testdir(tmp_path):
         chi = Path(qeh.__file__).parent / 'chi-data/H-MoS2-chi.npz'
         Path(chi.name).symlink_to(chi)
 
-        #WS2
+        # WS2
         chi = Path(qeh.__file__).parent / 'chi-data/H-WS2-chi.npz'
         Path(chi.name).symlink_to(chi)
         yield tmp_path
