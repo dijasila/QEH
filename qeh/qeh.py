@@ -653,12 +653,17 @@ class Heterostructure:
                     kernelsub_ij = self.kernelsub_qwij[iq, iw].copy()
                     newkernel_ij = kernel_ij + kernelsub_ij
                 else:
-                    newkernel_ij = kernel_ij
-                chi_qwij[iq, iw] = inv(eye - dot(chi_intra_wij[iw],
-                                                 newkernel_ij))
+                    newkernel_ij = kernel_ij.copy()
+
+                # If include off diagonal elements add overlap matrix 
+                if self.include_off_diagonal:
+                    newkernel_ij = newkernel_ij @ self.g_qij[iq]
+
+                chi_qwij[iq, iw] = inv(eye - chi_intra_wij[iw] @
+                                                 newkernel_ij)
 
             for chi_ij, chi_intra_ij in zip(chi_qwij[iq], chi_intra_wij):
-                chi_ij[:, :] = dot(chi_ij, chi_intra_ij)
+                chi_ij[:, :] = chi_ij @ chi_intra_ij
 
         return chi_qwij
 
