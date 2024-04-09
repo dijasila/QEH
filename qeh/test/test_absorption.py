@@ -9,8 +9,6 @@ def test_absorption(testdir):
     HS = make_bilayer('H-MoS2', 'H-WSe2', wmax=10)
 
     q, w, abs_qw = HS.get_absorption_spectrum()
-    previous_absmax = 0  # Needed for flake8...
-    previous_wmax = 0
     i = abs_qw[0, :].argmax()
     absmax = abs_qw[0, i]
     wmax = w[i]
