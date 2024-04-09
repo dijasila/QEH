@@ -4,7 +4,7 @@ import pytest
 
 
 def test_eels(testdir):
-    """Calculate W(q)
+    """Calculate eels spectra
     """
     HS = make_bilayer('H-MoS2', 'H-WSe2', wmax=10)
 
