@@ -20,12 +20,12 @@ def test_absorption(testdir):
     assert np.all(abs_qw >= -1e-6)
 
 
+# This test fails, some peaks at finit q have
+# higher intensity and peak position does not shift to
+# higher frequency. Is this correct?
 @pytest.mark.xfail
 def test_absorption_q(testdir):
     """Tests absorption spectra finite q.
-    This test fails, some peaks at finit q have
-    higher intensity and peak position does not shift to
-    higher frequency. Is this correct?
     """
     HS = make_bilayer('H-MoS2', 'H-WSe2', wmax=10)
 
