@@ -492,7 +492,7 @@ class Heterostructure:
         # no substrate no kernel
         if self.substrate is None:
             return None
-        
+
         kernelsub_qij = np.zeros([self.mynq, self.dim, self.dim],
                                  dtype=complex)
 
@@ -554,7 +554,7 @@ class Heterostructure:
         return kernelsub_qwij.real
 
     def get_all_kernels(self, step_potential=False):
-        """ 
+        """
         If step_potential, recalculates kernels
         with step potentials. otherwise returns kernels saved to self.
         """
@@ -562,8 +562,9 @@ class Heterostructure:
             return self.kernel_qij, self.kernelsub_qwij
         else:
             return (self.get_Coulomb_Kernel(step_potential=step_potential),
-                    self.get_substrate_Coulomb_Kernel(step_potential=step_potential))
-    
+                    self.get_substrate_Coulomb_Kernel(
+                        step_potential=step_potential))
+
     @timer('Solve chi dyson equation')
     def get_chi_matrix(self, kernel_qij=None, kernelsub_qwij=None):
         """
@@ -614,7 +615,7 @@ class Heterostructure:
                     newkernel_ij = kernel_ij + kernelsub_ij
                 else:
                     newkernel_ij = kernel_ij
-                    
+
                 chi_qwij[iq, iw] = inv(eye - dot(chi_intra_wij[iw],
                                                  newkernel_ij))
 
@@ -646,21 +647,15 @@ class Heterostructure:
 
         for i, iq in enumerate(iq_q):
             kernel_ij = kernel_qij[iq]
-            if self.substrate is not None:
-                for j, iw in enumerate(iw_w):
+            for j, iw in enumerate(iw_w):
+                if self.substrate is not None:
                     newkernel_ij = kernel_ij + kernelsub_qwij[iq, iw]
-                    eps_qwij[i, j, :, :] = np.linalg.inv(
-                        np.eye(newkernel_ij.shape[0]) + np.dot(newkernel_ij,
-                                                               chi_qwij[iq, iw,
-                                                                        :, :]))
-
-            else:
-                for j, iw in enumerate(iw_w):
-                    eps_qwij[i, j, :, :] = np.linalg.inv(
-                        np.eye(kernel_ij.shape[0]) + np.dot(kernel_ij,
-                                                            chi_qwij[iq, iw,
-                                                                     :, :]))
-
+                else:
+                    newkernel_ij = kernel_ij
+                eps_qwij[i, j, :, :] = np.linalg.inv(
+                    np.eye(newkernel_ij.shape[0]) + np.dot(newkernel_ij,
+                                                           chi_qwij[iq, iw,
+                                                                    :, :]))
         return eps_qwij
 
     @timer('Get screened potential')
@@ -676,7 +671,8 @@ class Heterostructure:
 
         returns: W(q,w)
         """
-        kernel_qij, kernelsub_qwij = self.get_all_kernels(step_potential = step_potential)
+        kernel_qij, kernelsub_qwij = \
+            self.get_all_kernels(step_potential=step_potential)
 
         chi_qwij = self.get_chi_matrix(kernel_qij=kernel_qij,
                                        kernelsub_qwij=kernelsub_qwij)
