@@ -298,10 +298,11 @@ class Heterostructure:
             self.drho_array = self.arange_basis(drho_monopole, drho_dipole)
 
         self.dphi_array = self.get_induced_potentials()
-        self.kernel_qij = None
 
-        if self.substrate is not None:
-            self.kernelsub_qwij = None
+        # Kernels on self are now always calculated with
+        # step_potential=False
+        self.kernel_qij = self.get_Coulomb_Kernel()
+        self.kernelsub_qwij = self.get_substrate_Coulomb_Kernel()
 
     @timer('Arange basis')
     def arange_basis(self, drhom, drhod=None):
@@ -487,6 +488,11 @@ class Heterostructure:
     @timer('Get substrate coulomb kernel')
     def get_substrate_Coulomb_Kernel(self, step_potential=False):
         from scipy.interpolate import interp1d
+
+        # no substrate no kernel
+        if self.substrate is None:
+            return None
+        
         kernelsub_qij = np.zeros([self.mynq, self.dim, self.dim],
                                  dtype=complex)
 
@@ -547,23 +553,31 @@ class Heterostructure:
 
         return kernelsub_qwij.real
 
+    def get_all_kernels(self, step_potential=False):
+        """ 
+        If step_potential, recalculates kernels
+        with step potentials. otherwise returns kernels saved to self.
+        """
+        if not step_potential:
+            return self.kernel_qij, self.kernelsub_qwij
+        else:
+            return (self.get_Coulomb_Kernel(step_potential=step_potential),
+                    self.get_substrate_Coulomb_Kernel(step_potential=step_potential))
+    
     @timer('Solve chi dyson equation')
-    def get_chi_matrix(self):
+    def get_chi_matrix(self, kernel_qij=None, kernelsub_qwij=None):
         """
         Dyson equation: chi_full = chi_intra + chi_intra V_inter chi_full
         """
         print('Calculating full chi')
+        if kernel_qij is None:
+            kernel_qij = self.kernel_qij
+        if kernelsub_qwij is None:
+            kernelsub_qwij = self.kernelsub_qwij
         Nls = self.n_layers
         q_abs = self.myq_abs
         chi_m_iqw = self.chi_monopole
         chi_d_iqw = self.chi_dipole
-
-        if self.kernel_qij is None:
-            self.kernel_qij = self.get_Coulomb_Kernel()
-
-        if self.substrate is not None:
-            if self.kernelsub_qwij is None:
-                self.kernelsub_qwij = self.get_substrate_Coulomb_Kernel()
 
         chi_qwij = np.zeros((self.mynq, len(self.frequencies),
                              self.dim, self.dim), dtype=complex)
@@ -576,7 +590,7 @@ class Heterostructure:
             if (1 + iq) % (nq // 10) == 0:
                 print('{}%'.format(np.round((1 + iq) / nq, 1) * 100))
 
-            kernel_ij = self.kernel_qij[iq].copy()
+            kernel_ij = kernel_qij[iq].copy()
             np.fill_diagonal(kernel_ij, 0)  # Diagonal is set to zero
 
             if self.chi_dipole is not None:
@@ -596,14 +610,13 @@ class Heterostructure:
                 chi_intra_wij[iw] = np.diag(chi_intra_i)
 
                 if self.substrate is not None:
-                    kernelsub_ij = self.kernelsub_qwij[iq, iw].copy()
+                    kernelsub_ij = kernelsub_qwij[iq, iw]
                     newkernel_ij = kernel_ij + kernelsub_ij
-
-                    chi_qwij[iq, iw] = inv(eye - dot(chi_intra_wij[iw],
-                                                     newkernel_ij))
-
-            if self.substrate is None:
-                chi_qwij[iq] = inv(eye - dot(chi_intra_wij, kernel_ij))
+                else:
+                    newkernel_ij = kernel_ij
+                    
+                chi_qwij[iq, iw] = inv(eye - dot(chi_intra_wij[iw],
+                                                 newkernel_ij))
 
             for chi_ij, chi_intra_ij in zip(chi_qwij[iq], chi_intra_wij):
                 chi_ij[:, :] = dot(chi_ij, chi_intra_ij)
@@ -624,28 +637,18 @@ class Heterostructure:
 
         nq = len(iq_q)
         nw = len(iw_w)
-        if self.kernel_qij is None:
-            sp = step_potential
-            self.kernel_qij = self.get_Coulomb_Kernel(step_potential=sp)
-
-            if self.substrate is not None:
-                if self.kernelsub_qwij is None:
-                    self.kernelsub_qwij = \
-                        self.get_substrate_Coulomb_Kernel(step_potential=sp)
-
-            chi_qwij = self.get_chi_matrix()
-            self.chi_qwij = chi_qwij
-        else:
-            chi_qwij = self.chi_qwij
-
+        sp = step_potential
+        kernel_qij, kernelsub_qwij = self.get_all_kernels(step_potential=sp)
+        chi_qwij = self.get_chi_matrix(kernel_qij=kernel_qij,
+                                       kernelsub_qwij=kernelsub_qwij)
         eps_qwij = np.zeros((nq, nw,
                              self.dim, self.dim), dtype=complex)
 
         for i, iq in enumerate(iq_q):
-            kernel_ij = self.kernel_qij[iq]
+            kernel_ij = kernel_qij[iq]
             if self.substrate is not None:
                 for j, iw in enumerate(iw_w):
-                    newkernel_ij = kernel_ij + self.kernelsub_qwij[iq, iw]
+                    newkernel_ij = kernel_ij + kernelsub_qwij[iq, iw]
                     eps_qwij[i, j, :, :] = np.linalg.inv(
                         np.eye(newkernel_ij.shape[0]) + np.dot(newkernel_ij,
                                                                chi_qwij[iq, iw,
@@ -673,15 +676,10 @@ class Heterostructure:
 
         returns: W(q,w)
         """
-        self.kernel_qij =\
-            self.get_Coulomb_Kernel(step_potential=step_potential)
+        kernel_qij, kernelsub_qwij = self.get_all_kernels(step_potential = step_potential)
 
-        if self.substrate is not None:
-            sp = step_potential
-            self.kernelsub_qwij = \
-                self.get_substrate_Coulomb_Kernel(step_potential=sp)
-
-        chi_qwij = self.get_chi_matrix()
+        chi_qwij = self.get_chi_matrix(kernel_qij=kernel_qij,
+                                       kernelsub_qwij=kernelsub_qwij)
         W_qw = np.zeros((self.mynq, len(self.frequencies)),
                         dtype=complex)
 
@@ -689,7 +687,7 @@ class Heterostructure:
         if self.chi_dipole is not None:
             k *= 2
         for iq in range(self.mynq):
-            kernel_ij = self.kernel_qij[iq].copy()
+            kernel_ij = kernel_qij[iq].copy()
 
             # if np.isclose(self.myq_abs[iq], 0):
             #     kernel_ij = 2 * np.pi * np.ones([self.dim, self.dim])
@@ -702,7 +700,7 @@ class Heterostructure:
             for iw in range(0, len(self.frequencies)):
                 if self.substrate is not None:
                     newkernel_ij = kernel_ij + \
-                        self.kernelsub_qwij[iq, iw].copy()
+                        kernelsub_qwij[iq, iw].copy()
                     W_qw[iq, iw] = np.dot(np.dot(newkernel_ij[k],
                                                  chi_qwij[iq, iw]),
                                           newkernel_ij[:, k])
@@ -725,11 +723,9 @@ class Heterostructure:
         v_screened_q = np.zeros(self.mynq)
         eps_qwij = self.get_eps_matrix()
         h_distr = h_distr.transpose()
-        kernel_qij = self.get_Coulomb_Kernel()
+        kernel_qij = self.kernel_qij.copy()
 
         if self.substrate is not None:
-            if self.kernelsub_qwij is None:
-                self.kernelsub_qwij = self.get_substrate_Coulomb_Kernel()
             kernel_qij += self.kernelsub_qwij[:, 0]
 
         for iq in range(0, self.mynq):
