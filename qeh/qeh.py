@@ -1361,7 +1361,7 @@ class Heterostructure:
         g_qij = []
         gdag_qij = []
         for iq in range(self.mynq):
-            g_qij.append(np.eye(self.dim))
+            g_qij.append(np.eye(self.dim, dtype=complex))
         if not self.include_off_diagonal:
             return g_qij, g_qijn
         # if include_off_diagonal add off-diag components of
