@@ -127,7 +127,7 @@ class Heterostructure:
         and related physical quantities."""
 
     def __init__(self, structure, d, thicknesses=None,
-                 include_dipole=True, d0=None,
+                 include_dipole=True, include_off_diagonal=True, d0=None,
                  wmax=10, qmax=None, timer=None, substrate=None):
         """Creates a Heterostructure object.
 
@@ -148,6 +148,8 @@ class Heterostructure:
             measure.
         include_dipole: Bool
             Includes dipole contribution if True
+        include_off_diagonal: Bool
+            include off-diagonal components of intralayer chi if true
         wmax: float
             Cutoff for frequency grid (eV)
         qmax: float
@@ -175,6 +177,12 @@ class Heterostructure:
         else:
             self.chi_dipole = None
             drho_dipole = None
+        if include_off_diagonal:
+            assert include_dipole, 'include_dipole must be True if' \
+                                   ' include_off_diagonal is True'
+            chi_dm = []
+            chi_md = []
+        self.include_off_diagonal = include_off_diagonal
         self.z = []
         layer_indices = []
         self.n_layers = 0
@@ -201,6 +209,15 @@ class Heterostructure:
                 zi -= np.mean(zi)
                 chim = data['chiM_qw']
                 chid = data['chiD_qw']
+                if include_off_diagonal:
+                    if 'chiDM_qw' in data:
+                        chidm = data['chiDM_qw']
+                    else:
+                        chidm = np.zeros(chim.shape)
+                    if 'chiMD_qw' in data:
+                        chimd = data['chiMD_qw']
+                    else:
+                        chimd = np.zeros(chim.shape)
                 drhom = data['drhoM_qz']
                 drhod = data['drhoD_qz']
                 if qmax is not None:
@@ -216,6 +233,10 @@ class Heterostructure:
                 if include_dipole:
                     chi_dipole.append(np.array(chid[:qindex, :windex]))
                     drho_dipole.append(np.array(drhod[:qindex]))
+                if include_off_diagonal:
+                    chi_dm.append(np.array(chidm[:qindex, :windex]))
+                    chi_md.append(np.array(chimd[:qindex, :windex]))
+
                 self.z.append(np.array(zi))
                 n -= n_rep
             else:
@@ -245,6 +266,9 @@ class Heterostructure:
 
         chi_monopole = np.array(chi_monopole)[:, self.q1: self.q2]
         chi_dipole = np.array(chi_dipole)[:, self.q1: self.q2]
+        if include_off_diagonal:
+            chi_dm = np.array(chi_dm)[:, self.q1: self.q2]
+            chi_md = np.array(chi_md)[:, self.q1: self.q2]
         for i in range(self.n_types):
             drho_monopole[i] = np.array(drho_monopole[i])[self.q1: self.q2]
             drho_dipole[i] = np.array(drho_dipole[i])[self.q1: self.q2]
@@ -263,8 +287,10 @@ class Heterostructure:
             self.s = [d0 / Bohr]  # Width of single layer
         self.d0 = d0 / Bohr
 
+        # F.N. Dimension is doubled if dipole is included.
+        # J.S. also if off-diagonal is included, regardless of dipole, I think
         self.dim = np.copy(self.n_layers)
-        if include_dipole:
+        if include_dipole:  # J.S. or include_off_diagonal
             self.dim *= 2
 
         # Grid stuff
@@ -294,6 +320,9 @@ class Heterostructure:
         self.chi_monopole = chi_monopole
         if include_dipole:
             self.chi_dipole = chi_dipole
+        if include_off_diagonal:
+            self.chi_md = chi_md
+            self.chi_dm = chi_dm
         self.drho_monopole, self.drho_dipole, self.basis_array, \
             self.drho_array = self.arange_basis(drho_monopole, drho_dipole)
 
@@ -303,6 +332,11 @@ class Heterostructure:
         # step_potential=False
         self.kernel_qij = self.get_Coulomb_Kernel()
         self.kernelsub_qwij = self.get_substrate_Coulomb_Kernel()
+
+        # In case of off-diagonal components mixed basis is not
+        # orthonormal. Here we get the inverse overlap matrix
+        # which is needed for completeness relation
+        self.g_qij, self.gdag_qij = self.get_g_qij()
 
     @timer('Arange basis')
     def arange_basis(self, drhom, drhod=None):
@@ -349,6 +383,8 @@ class Heterostructure:
 
         return drhom, drhod, basis_array, drho_array
 
+    # F.N XXX Does this function also need to be generalized to include
+    # off diagonal components? I think not...
     @timer('Get induced potentials')
     def get_induced_potentials(self):
         from scipy.interpolate import interp1d
@@ -579,22 +615,27 @@ class Heterostructure:
         q_abs = self.myq_abs
         chi_m_iqw = self.chi_monopole
         chi_d_iqw = self.chi_dipole
+        if self.include_off_diagonal:
+            chi_md_iqw = self.chi_md
+            chi_dm_iqw = self.chi_dm
 
         chi_qwij = np.zeros((self.mynq, len(self.frequencies),
                              self.dim, self.dim), dtype=complex)
 
-        dot = np.dot
         inv = np.linalg.inv
         eye = np.eye(self.dim)
         nq = len(q_abs)
         for iq in range(nq):
-            if (1 + iq) % (nq // 10) == 0:
+            if nq >= 10 and (1 + iq) % (nq // 10) == 0:
                 print('{}%'.format(np.round((1 + iq) / nq, 1) * 100))
 
             kernel_ij = kernel_qij[iq].copy()
             np.fill_diagonal(kernel_ij, 0)  # Diagonal is set to zero
 
             if self.chi_dipole is not None:
+                # F.N Removes self-interaction term for off-diagonal
+                # components. This should also be set to zero when
+                # using off diagonal building blocks...
                 for j in range(self.n_layers):
                     kernel_ij[2 * j, 2 * j + 1] = 0
                     kernel_ij[2 * j + 1, 2 * j] = 0
@@ -608,7 +649,17 @@ class Heterostructure:
                     chi_intra_i = np.insert(chi_intra_i, np.arange(Nls) + 1,
                                             chi_d_iqw[self.layer_indices,
                                                       iq, iw])
+                #F.N Should be sufficient to include off-diagonal components here
+                # rest seems general...
                 chi_intra_wij[iw] = np.diag(chi_intra_i)
+
+                # F.N. Let's start with some ugly code that is easily understandable
+                # Add off diagonal components:
+                if self.include_off_diagonal:
+                    for j in range(self.n_layers):
+                        # XXX define chi_md, chi_dm...
+                        chi_intra_wij[iw][2*j, 2*j + 1] = chi_md_iqw[self.layer_indices[j], iq, iw]
+                        chi_intra_wij[iw][2*j + 1, 2*j] = chi_dm_iqw[self.layer_indices[j], iq, iw]
 
                 if self.substrate is not None:
                     kernelsub_ij = kernelsub_qwij[iq, iw]
@@ -616,11 +667,11 @@ class Heterostructure:
                 else:
                     newkernel_ij = kernel_ij
 
-                chi_qwij[iq, iw] = inv(eye - dot(chi_intra_wij[iw],
-                                                 newkernel_ij))
+                # F. N: Added overlap g if include_off_diagonal
+                chi_qwij[iq, iw] = inv(eye - self.multiply_AgB(chi_intra_wij[iw], self.g_qij[iq], newkernel_ij) )
 
             for chi_ij, chi_intra_ij in zip(chi_qwij[iq], chi_intra_wij):
-                chi_ij[:, :] = dot(chi_ij, chi_intra_ij)
+                chi_ij[:, :] = chi_ij @ chi_intra_ij
 
         return chi_qwij
 
@@ -1289,6 +1340,36 @@ class Heterostructure:
         nq = len(self.q_abs)
         return A_qw[:nq]
 
+    # F.N Added function to get metric
+    def get_g_qij(self):
+        """ Returns left and right metric, g, gdag
+        """
+        g_qij = []
+        gdag_qij = []
+        for iq in range(self.mynq):
+            g_qij.append(np.eye(self.dim, dtype=complex))
+        if not self.include_off_diagonal:
+            return g_qij, g_qijn
+        # if include_off_diagonal add off-diag components of
+        # metric ( g^{-1} )_{i,j} = chibar_{ij} / chibar_{ii}
+        for iq in range(self.mynq):
+            for j in range(self.n_layers):
+                g_qij[iq][2*j, 2*j + 1] = self.chi_md[self.layer_indices[j], iq, 0] / self.chi_monopole[self.layer_indices[j], iq, 0]
+                g_qij[iq][2*j +1, 2*j] = self.chi_dm[self.layer_indices[j], iq, 0] / self.chi_dipole[self.layer_indices[j], iq, 0]
+            g_qij[iq] = np.linalg.inv(g_qij[iq])
+            gdag_qij.append(g_qij[iq].conj().T) 
+        return g_qij, gdag_qij
+
+    def multiply_AgB(self, A, g, B):
+        """ Multiplies matrices A and B
+        including metric g if off diagonal building
+        blocks are included
+        """
+        if self.include_off_diagonal:
+            return A@g@B
+        else:
+            return A@B
+
 
 """TOOLS"""
 
@@ -1334,6 +1415,17 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
 
     from scipy.interpolate import RectBivariateSpline, interp1d
 
+    def spline(array, x_in, y_in, x_out, y_out):
+        # interpolates a function from the regular grid (x_in, y_in)
+        # to (x_out, y_out)
+        # The shape of 'array' must be (len(x_in), len(y_in)).
+        interpolator = RectBivariateSpline(x_in, y_in, array, s=0)
+        return interpolator(x_out, y_out)
+
+    def complex_spline(array, x_in, y_in, x_out, y_out):
+        return spline(array.real, x_in, y_in, x_out, y_out)\
+                     + 1j * spline(array.imag, x_in, y_in, x_out, y_out)
+
     if BBmotherfile is not None:
         BBfiles.append(BBmotherfile)
 
@@ -1347,6 +1439,7 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
     q_max = 1000
     w_max = 1000
     for name in BBfiles:
+        print(name)
         data = np.load(open(name, 'rb'))
         q_abs = data['q_abs']
         q_max = np.min([q_abs[-1], q_max])
@@ -1380,6 +1473,14 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
         chiD_qw = data['chiD_qw']
         drhoM_qz = data['drhoM_qz']
         drhoD_qz = data['drhoD_qz']
+        if 'chiDM_qw' in data:
+            chiDM_qw = data['chiDM_qw']
+        else:
+            chiDM_qw = np.zeros(chiM_qw.shape)
+        if 'chiMD_qw' in data:
+            chiMD_qw = data['chiMD_qw']
+        else:
+            chiMD_qw = np.zeros(chiM_qw.shape)
 
         # chi monopole
         omit_q0 = False
@@ -1417,6 +1518,17 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
 
         chiD_qw = yr(q_grid, w_grid) + 1j * yi(q_grid, w_grid)
 
+        # off-diagonal chi
+
+        if np.all(chiDM_qw == 0.0):
+            chiDM_qw = np.zeros((len(q_grid), len(w_grid)))
+        else:
+            chiDM_qw = complex_spline(chiDM_qw, q_abs, w, q_grid, w_grid)
+        if np.all(chiMD_qw == 0.0):
+            chiMD_qw = np.zeros((len(q_grid), len(w_grid)))
+        else:
+            chiMD_qw = complex_spline(chiMD_qw, q_abs, w, q_grid, w_grid)
+
         # drho monopole
 
         yr = RectBivariateSpline(q_abs, z,
@@ -1441,6 +1553,8 @@ def interpolate_building_blocks(BBfiles=None, BBmotherfile=None,
                 'omega_w': omega_w,
                 'chiM_qw': chiM_qw,
                 'chiD_qw': chiD_qw,
+                'chiMD_qw': chiMD_qw,
+                'chiDM_qw': chiDM_qw,
                 'z': z,
                 'drhoM_qz': drhoM_qz,
                 'drhoD_qz': drhoD_qz,
