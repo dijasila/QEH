@@ -12,8 +12,10 @@ def mock_substrate(d):
     w2 = 0.098
     w3 = 0.140
     w = np.linspace(start=0, stop=1.3, num=2000)
-    eps_w = (ei + (f1 * ((w1**2) / (w1**2+w**2)))+(f2 * ((w2**2) /
-            (w2**2+w**2))) + (f3 * ((w3**2) / (w3**2+w**2))))
+    A = f1 * w1**2 / (w1**2+w**2)
+    B = f2 * w2**2 / (w2**2+w**2)
+    C = f3 * w3**2 / (w3**2+w**2)
+    eps_w = ei + A + B + C
     substrate = {'eps': eps_w, 'omega': w, 'd': [d], 'isotropic': True}
     return substrate
 
