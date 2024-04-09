@@ -652,12 +652,10 @@ class Heterostructure:
                 if self.substrate is not None:
                     kernelsub_ij = self.kernelsub_qwij[iq, iw].copy()
                     newkernel_ij = kernel_ij + kernelsub_ij
-
-                    chi_qwij[iq, iw] = inv(eye - dot(chi_intra_wij[iw],
-                                                     newkernel_ij))
-
-            if self.substrate is None:
-                chi_qwij[iq] = inv(eye - dot(chi_intra_wij, kernel_ij))
+                else:
+                    newkernel_ij = kernel_ij
+                chi_qwij[iq, iw] = inv(eye - dot(chi_intra_wij[iw],
+                                                 newkernel_ij))
 
             for chi_ij, chi_intra_ij in zip(chi_qwij[iq], chi_intra_wij):
                 chi_ij[:, :] = dot(chi_ij, chi_intra_ij)
@@ -1383,7 +1381,8 @@ class Heterostructure:
         """
         if self.include_off_diagonal:
             return A@g@B
-        else return A@B
+        else:
+            return A@B
 
 
 """TOOLS"""
