@@ -607,7 +607,6 @@ class Heterostructure:
         chi_qwij = np.zeros((self.mynq, len(self.frequencies),
                              self.dim, self.dim), dtype=complex)
 
-        dot = np.dot
         inv = np.linalg.inv
         eye = np.eye(self.dim)
         nq = len(q_abs)
@@ -653,14 +652,10 @@ class Heterostructure:
                     kernelsub_ij = self.kernelsub_qwij[iq, iw].copy()
                     newkernel_ij = kernel_ij + kernelsub_ij
                 else:
-                    newkernel_ij = kernel_ij.copy()
+                    newkernel_ij = kernel_ij
 
-                # If include off diagonal elements add overlap matrix 
-                if self.include_off_diagonal:
-                    newkernel_ij = newkernel_ij @ self.g_qij[iq]
-
-                chi_qwij[iq, iw] = inv(eye - chi_intra_wij[iw] @
-                                                 newkernel_ij)
+                # F. N: Added overlap g if include_off_diagonal
+                chi_qwij[iq, iw] = inv(eye - self.multiply_AgB(chi_intra_wij[iw], self.g_qij[iq], newkernel_ij) )
 
             for chi_ij, chi_intra_ij in zip(chi_qwij[iq], chi_intra_wij):
                 chi_ij[:, :] = chi_ij @ chi_intra_ij
@@ -1379,7 +1374,7 @@ class Heterostructure:
             gdag_qij.append(g_qij[iq].conj().T) 
         return g_qij, gdag_qij
 
-    def multiply_AgB(A, B, g):
+    def multiply_AgB(self, A, g, B):
         """ Multiplies matrices A and B
         including metric g if off diagonal building
         blocks are included
